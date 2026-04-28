@@ -3,3 +3,5 @@
 !.env.example
 /tmp/
 .DS_Store
+src/graphify-out/
+node_modules/
