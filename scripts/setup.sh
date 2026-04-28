@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# OpenClaw Bot System — Setup Wizard (agnóstico)
+# SerenBot — Setup Wizard
 # =============================================================================
-# Uso: bash setup.sh [--only agent1|agent2|all]
+# Uso: bash scripts/setup.sh [--only agent1|agent2|all]
 # Testado em: Ubuntu 22.04, Debian 12
 # =============================================================================
 
@@ -32,7 +32,7 @@ done
 # =============================================================================
 # ESTADO DE PROGRESSO — permite retomar se o script for interrompido
 # =============================================================================
-STATE_FILE="/tmp/.openclaw_setup_state"
+STATE_FILE="/tmp/.serenbot_setup_state"
 declare -A STATE=()
 
 state_save() { echo "$1=$2" >> "$STATE_FILE"; }
@@ -45,6 +45,9 @@ state_done() { [[ "$(state_get "$1")" == "done" ]]; }
 
 state_load
 
+# Directório raiz do repositório (onde está o src/)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # =============================================================================
 # BANNER
 # =============================================================================
@@ -52,8 +55,8 @@ clear
 echo -e "${BOLD}${CYAN}"
 cat << 'BANNER'
   ╔══════════════════════════════════════════╗
-  ║   OpenClaw Bot System — Setup Wizard    ║
-  ║   OpenClaw · Cloudflare Tunnels · Bots  ║
+  ║        SerenBot — Setup Wizard          ║
+  ║  OpenClaw · Cloudflare Tunnels · Bots   ║
   ╚══════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
@@ -69,7 +72,7 @@ PROJECT_NAME=$(state_get "PROJECT_NAME")
 if [[ -n "$PROJECT_NAME" ]]; then
   ok "Projecto: $PROJECT_NAME (de sessão anterior)"
 else
-  echo -e "  Exemplos: ${YELLOW}myapp${NC}, ${YELLOW}salon${NC}, ${YELLOW}clinic${NC}"
+  echo -e "  Exemplos: ${YELLOW}clinic${NC}, ${YELLOW}salon${NC}, ${YELLOW}myapp${NC}"
   echo -e "  Usado em: pasta de configuração, nome do tunnel, nomes de serviços systemd"
   echo ""
   read -r -p "  Nome do projecto (só letras, números, hífens): " PROJECT_NAME
@@ -87,6 +90,41 @@ ENV_FILE="${ENV_DIR}/.env"
 TUNNEL_NAME="${PROJECT_NAME}"
 SVC_GATEWAY="${PROJECT_NAME}-gateway"
 SVC_API="${PROJECT_NAME}-api"
+SVC_PROXY="${PROJECT_NAME}-proxy"
+
+# =============================================================================
+# IDENTIDADE DA APLICAÇÃO
+# =============================================================================
+sep
+echo -e "${BOLD}IDENTIDADE — Nome da aplicação e do agente${NC}"
+echo ""
+
+APP_NAME=$(state_get "APP_NAME")
+if [[ -n "$APP_NAME" ]]; then
+  ok "App name: $APP_NAME (de sessão anterior)"
+else
+  read -r -p "  Nome da aplicação (ex: Salon Nina, Bliss Touch): " APP_NAME
+  [[ -z "$APP_NAME" ]] && APP_NAME="SerenBot"
+  state_save "APP_NAME" "$APP_NAME"
+fi
+
+BOT_CLIENT_NAME=$(state_get "BOT_CLIENT_NAME")
+if [[ -n "$BOT_CLIENT_NAME" ]]; then
+  ok "Nome do bot cliente: $BOT_CLIENT_NAME (de sessão anterior)"
+else
+  read -r -p "  Nome do bot cliente (ex: Noa, Sara, Bot): " BOT_CLIENT_NAME
+  [[ -z "$BOT_CLIENT_NAME" ]] && BOT_CLIENT_NAME="Bot"
+  state_save "BOT_CLIENT_NAME" "$BOT_CLIENT_NAME"
+fi
+
+SITE_URL=$(state_get "SITE_URL")
+if [[ -n "$SITE_URL" ]]; then
+  ok "URL do site: $SITE_URL (de sessão anterior)"
+else
+  read -r -p "  URL público do site (ex: https://minhaempresa.pt): " SITE_URL
+  [[ -z "$SITE_URL" ]] && SITE_URL="https://localhost"
+  state_save "SITE_URL" "$SITE_URL"
+fi
 
 # =============================================================================
 # PREFLIGHT
@@ -154,7 +192,6 @@ if [[ "$INSTALL_MODE" == "all" ]]; then
   fi
 fi
 
-# Sandbox por agente
 configure_sandbox() {
   local agent="$1"
   local key="sandbox_${agent}"
@@ -177,18 +214,41 @@ configure_sandbox "$AGENT1_NAME"
 [[ -n "$AGENT2_NAME" ]] && configure_sandbox "$AGENT2_NAME"
 
 # =============================================================================
+# LOCALIZAÇÃO DO PRESTADOR (domicílio)
+# =============================================================================
+sep
+echo -e "${BOLD}LOCALIZAÇÃO — Ponto de partida para serviços ao domicílio${NC}"
+echo -e "  (Salta com Enter se não usas serviços ao domicílio)"
+echo ""
+
+PROVIDER_ADDRESS=$(state_get "PROVIDER_ADDRESS")
+if [[ -n "$PROVIDER_ADDRESS" ]]; then
+  ok "Morada: $PROVIDER_ADDRESS (de sessão anterior)"
+else
+  read -r -p "  Morada completa do prestador (ou Enter para saltar): " PROVIDER_ADDRESS
+  [[ -n "$PROVIDER_ADDRESS" ]] && state_save "PROVIDER_ADDRESS" "$PROVIDER_ADDRESS"
+fi
+
+PROVIDER_LAT=$(state_get "PROVIDER_LAT")
+PROVIDER_LON=$(state_get "PROVIDER_LON")
+if [[ -n "$PROVIDER_ADDRESS" && -z "$PROVIDER_LAT" ]]; then
+  echo -e "  ${YELLOW}Dica:${NC} usa maps.google.com para obter as coordenadas (clicar com o botão direito)"
+  read -r -p "  Latitude (ex: 38.7677): " PROVIDER_LAT
+  read -r -p "  Longitude (ex: -9.1387): " PROVIDER_LON
+  [[ -n "$PROVIDER_LAT" ]] && state_save "PROVIDER_LAT" "$PROVIDER_LAT"
+  [[ -n "$PROVIDER_LON" ]] && state_save "PROVIDER_LON" "$PROVIDER_LON"
+fi
+
+# =============================================================================
 # RECOLHA DE TOKENS
 # =============================================================================
 sep
 echo -e "${BOLD}TOKENS — Credenciais necessárias${NC}"
-echo -e "Podes saltar (Enter) e configurar depois em ${BOLD}$ENV_FILE${NC}."
+echo -e "  Podes saltar (Enter) e configurar depois em ${BOLD}$ENV_FILE${NC}."
 sep
 
 ask_token() {
-  local var_name="$1"
-  local label="$2"
-  local hint="$3"
-  local current
+  local var_name="$1" label="$2" hint="$3" current value
   current=$(state_get "$var_name")
   if [[ -n "$current" ]]; then
     ok "$label já configurado"
@@ -210,27 +270,67 @@ ask_token() {
   fi
 }
 
+ask_text() {
+  local var_name="$1" label="$2" hint="$3" current value
+  current=$(state_get "$var_name")
+  if [[ -n "$current" ]]; then
+    ok "$label: $current (de sessão anterior)"
+    printf -v "$var_name" '%s' "$current"
+    return
+  fi
+  echo ""
+  echo -e "  ${BOLD}$label${NC}"
+  [[ -n "$hint" ]] && echo -e "    ${YELLOW}Info:${NC} $hint"
+  read -r -p "    Valor: " value
+  if [[ -n "$value" ]]; then
+    state_save "$var_name" "$value"
+    printf -v "$var_name" '%s' "$value"
+    ok "Guardado"
+  else
+    warn "Saltado — edita $ENV_FILE depois"
+    printf -v "$var_name" '%s' ""
+  fi
+}
+
+# LLM
+sep
+echo -e "${BOLD}LLM — Modelo de linguagem${NC}"
+
 ask_token "ANTHROPIC_API_KEY" \
-  "Anthropic API Key" \
+  "Anthropic API Key (Claude — usado pelo OpenClaw)" \
   "https://console.anthropic.com → API Keys"
 
-echo ""
-echo -e "${BOLD}Integrações opcionais — salta as que não usas${NC}"
+ask_token "OPENROUTER_API_KEY" \
+  "OpenRouter API Key (opcional — proxy local para outros modelos)" \
+  "https://openrouter.ai/keys  |  salta se usas só Anthropic"
 
-ask_token "CAL_EU_API_KEY" \
-  "Cal.eu API Key (agendamento)" \
+# Cal.eu
+sep
+echo -e "${BOLD}CAL.EU — Agendamento${NC}"
+
+ask_token "CALCOM_API_KEY" \
+  "Cal.eu API Key" \
   "https://app.cal.eu → Settings → API Keys"
 
-ask_token "KOMMO_API_KEY" \
-  "Kommo CRM API Key" \
-  "https://app.kommo.com → Integrações → API"
+ask_text "CALCOM_USERNAME" \
+  "Cal.eu username (slug do calendário)" \
+  "Aparece no URL do teu calendário: cal.eu/{username}"
 
-KOMMO_ACCOUNT_URL=$(state_get "KOMMO_ACCOUNT_URL")
-if [[ -z "$KOMMO_ACCOUNT_URL" ]]; then
-  read -r -p "  URL da conta Kommo (ex: https://empresa.kommo.com): " KOMMO_ACCOUNT_URL
-  [[ -z "$KOMMO_ACCOUNT_URL" ]] && KOMMO_ACCOUNT_URL=""
-  [[ -n "$KOMMO_ACCOUNT_URL" ]] && state_save "KOMMO_ACCOUNT_URL" "$KOMMO_ACCOUNT_URL"
-fi
+# Kommo CRM
+sep
+echo -e "${BOLD}KOMMO CRM${NC}"
+
+ask_text "KOMMO_SUBDOMAIN" \
+  "Kommo subdomain" \
+  "Se acedes em empresa.kommo.com, o subdomain é 'empresa'"
+
+ask_token "KOMMO_ACCESS_TOKEN" \
+  "Kommo Access Token (long-lived)" \
+  "Kommo → Configurações → Integrações → API → Long-lived token"
+
+echo ""
+warn "IDs de pipeline e status Kommo precisam de configuração manual em $ENV_FILE"
+warn "Obtém-os via: GET https://{subdomain}.kommo.com/api/v4/leads/pipelines"
 
 # Cloudflare
 sep
@@ -253,9 +353,9 @@ if [[ -z "$CF_DOMAIN" ]]; then
 fi
 ok "Domínio: $CF_DOMAIN"
 
-# Telegram por agente
+# Telegram — bots por agente
 sep
-echo -e "${BOLD}TELEGRAM${NC}"
+echo -e "${BOLD}TELEGRAM — Bots por agente${NC}"
 echo -e "  Cria um bot por agente em @BotFather → /newbot"
 echo ""
 
@@ -269,6 +369,39 @@ collect_telegram_token() {
 
 collect_telegram_token "$AGENT1_NAME"
 [[ -n "$AGENT2_NAME" ]] && collect_telegram_token "$AGENT2_NAME"
+
+# Telegram — admin
+sep
+echo -e "${BOLD}TELEGRAM — Notificações admin${NC}"
+echo -e "  Bot que envia alertas ao administrador (pode ser o mesmo do agente 2/admin)"
+echo ""
+
+ask_token "TELEGRAM_BOT_B_TOKEN" \
+  "Telegram Bot Token — bot de notificações admin" \
+  "Pode ser o mesmo token do agente admin (ex: flux)"
+
+ask_text "TELEGRAM_ADMIN_ID" \
+  "Telegram Admin Chat ID (o teu ID pessoal de utilizador)" \
+  "Envia qualquer mensagem a @userinfobot para saber o teu ID"
+
+# Segurança — gerados automaticamente
+sep
+echo -e "${BOLD}SEGURANÇA — Tokens da API local${NC}"
+echo ""
+
+API_TOKEN=$(state_get "API_TOKEN")
+if [[ -z "$API_TOKEN" ]]; then
+  API_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 32)
+  state_save "API_TOKEN" "$API_TOKEN"
+  ok "API_TOKEN gerado automaticamente (guarda-o se precisares de chamar a API externamente)"
+fi
+
+WEBHOOK_SECRET=$(state_get "WEBHOOK_SECRET")
+if [[ -z "$WEBHOOK_SECRET" ]]; then
+  WEBHOOK_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 32)
+  state_save "WEBHOOK_SECRET" "$WEBHOOK_SECRET"
+  ok "WEBHOOK_SECRET gerado automaticamente (configura este valor no Cal.eu)"
+fi
 
 # WhatsApp
 sep
@@ -304,39 +437,71 @@ sep
 
 $SUDO mkdir -p "$ENV_DIR"
 
+# Ler vars dinâmicas antes do heredoc
+_TG1_KEY="TELEGRAM_TOKEN_${AGENT1_NAME^^}"
+_TG1_VAL="${!_TG1_KEY:-CONFIGURAR}"
+_TG2_LINE=""
+if [[ -n "$AGENT2_NAME" ]]; then
+  _TG2_KEY="TELEGRAM_TOKEN_${AGENT2_NAME^^}"
+  _TG2_LINE="TELEGRAM_TOKEN_${AGENT2_NAME^^}=${!_TG2_KEY:-CONFIGURAR}"
+fi
+
 $SUDO tee "$ENV_FILE" > /dev/null << EOF
 # === ${PROJECT_NAME} — Gerado por setup.sh em $(date -u +%Y-%m-%dT%H:%M:%SZ) ===
 # ATENÇÃO: chmod 600. NÃO expor via web. NÃO commitar.
 
+# --- Identidade ---
+APP_NAME=${APP_NAME:-SerenBot}
+SITE_URL=${SITE_URL:-https://localhost}
+BOT_CLIENT_NAME=${BOT_CLIENT_NAME:-Bot}
+
+# --- OpenClaw ---
+OPENCLAW_AGENT_NAME=${AGENT1_NAME}
+
+# --- Localização do prestador (para serviços ao domicílio) ---
+PROVIDER_ADDRESS=${PROVIDER_ADDRESS:-CONFIGURAR}
+PROVIDER_LAT=${PROVIDER_LAT:-0}
+PROVIDER_LON=${PROVIDER_LON:-0}
+
 # --- LLM ---
 ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-CONFIGURAR}
+OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-CONFIGURAR}
 
 # --- Cal.eu ---
-CAL_EU_API_KEY=${CAL_EU_API_KEY:-CONFIGURAR}
-CAL_EU_BASE_URL=https://api.cal.eu/v2
+CALCOM_API_KEY=${CALCOM_API_KEY:-CONFIGURAR}
+CALCOM_USERNAME=${CALCOM_USERNAME:-CONFIGURAR}
+CALCOM_TIMEZONE=Europe/Lisbon
 
 # --- Kommo CRM ---
-KOMMO_API_KEY=${KOMMO_API_KEY:-CONFIGURAR}
-KOMMO_ACCOUNT_URL=${KOMMO_ACCOUNT_URL:-CONFIGURAR}
+KOMMO_SUBDOMAIN=${KOMMO_SUBDOMAIN:-CONFIGURAR}
+KOMMO_ACCESS_TOKEN=${KOMMO_ACCESS_TOKEN:-CONFIGURAR}
+KOMMO_RESPONSIBLE_USER_ID=CONFIGURAR
+# IDs obtidos via: GET https://{subdomain}.kommo.com/api/v4/leads/pipelines
+KOMMO_PIPELINE_ID=CONFIGURAR
+KOMMO_PIPELINE_ATIVOS_ID=CONFIGURAR
+KOMMO_STATUS_AGENDADO=CONFIGURAR
+KOMMO_STATUS_ATIVOS_AGENDADO=CONFIGURAR
 
 # --- Cloudflare ---
 CF_ACCOUNT_ID=${CF_ACCOUNT_ID:-CONFIGURAR}
 CF_API_TOKEN=${CF_API_TOKEN:-CONFIGURAR}
 CF_DOMAIN=${CF_DOMAIN}
 
-# --- Telegram ---
-$(
-  key1="TELEGRAM_TOKEN_${AGENT1_NAME^^}"
-  echo "TELEGRAM_TOKEN_${AGENT1_NAME^^}=${!key1:-CONFIGURAR}"
-  if [[ -n "$AGENT2_NAME" ]]; then
-    key2="TELEGRAM_TOKEN_${AGENT2_NAME^^}"
-    echo "TELEGRAM_TOKEN_${AGENT2_NAME^^}=${!key2:-CONFIGURAR}"
-  fi
-)
+# --- Telegram (bots por agente — usados pelo OpenClaw) ---
+TELEGRAM_TOKEN_${AGENT1_NAME^^}=${_TG1_VAL}
+${_TG2_LINE}
+
+# --- Telegram (admin — notificações da API) ---
+TELEGRAM_BOT_B_TOKEN=${TELEGRAM_BOT_B_TOKEN:-CONFIGURAR}
+TELEGRAM_ADMIN_ID=${TELEGRAM_ADMIN_ID:-CONFIGURAR}
 
 # --- WhatsApp ---
 WA_TOKEN=${WA_TOKEN:-CONFIGURAR}
 WA_PHONE_ID=${WA_PHONE_ID:-CONFIGURAR}
+
+# --- Segurança API ---
+API_TOKEN=${API_TOKEN}
+WEBHOOK_SECRET=${WEBHOOK_SECRET}
 
 # --- Servidor ---
 GATEWAY_PORT=18789
@@ -370,6 +535,55 @@ else
   command -v openclaw >/dev/null 2>&1 || die "OpenClaw não encontrado após instalação. Verifica o PATH e reinicia o terminal."
   ok "OpenClaw instalado: $(openclaw --version)"
   state_save "openclaw_installed" "done"
+fi
+
+# =============================================================================
+# INSTALAR NODE.JS
+# =============================================================================
+sep
+echo -e "${BOLD}NODE.JS${NC}"
+sep
+
+install_nodejs() {
+  info "A instalar Node.js LTS..."
+  curl -fsSL https://deb.nodesource.com/setup_lts.x | $SUDO bash -
+  $SUDO apt-get install -y nodejs
+  ok "Node.js instalado: $(node --version)"
+  state_save "nodejs_installed" "done"
+}
+
+if state_done "nodejs_installed"; then
+  ok "Node.js já instalado (de sessão anterior)"
+elif command -v node >/dev/null 2>&1; then
+  NODE_MAJOR=$(node --version 2>/dev/null | tr -d 'v' | cut -d. -f1)
+  if [[ "$NODE_MAJOR" -ge 18 ]]; then
+    ok "Node.js: $(node --version)"
+    state_save "nodejs_installed" "done"
+  else
+    warn "Node.js $(node --version) — versão mínima é 18. A actualizar..."
+    install_nodejs
+  fi
+else
+  install_nodejs
+fi
+
+NODE_BIN=$(command -v node)
+
+# =============================================================================
+# DEPENDÊNCIAS NODE (npm install)
+# =============================================================================
+sep
+echo -e "${BOLD}DEPENDÊNCIAS NODE${NC}"
+sep
+
+if state_done "npm_installed"; then
+  ok "Dependências já instaladas"
+else
+  [[ -f "$REPO_DIR/package.json" ]] || die "package.json não encontrado em $REPO_DIR — repositório incompleto"
+  info "A instalar dependências em $REPO_DIR..."
+  (cd "$REPO_DIR" && npm install --production)
+  ok "npm install concluído"
+  state_save "npm_installed" "done"
 fi
 
 # =============================================================================
@@ -441,7 +655,6 @@ else
   state_save "cf_tunnel_uuid" "$TUNNEL_UUID"
 fi
 
-# Configuração do tunnel
 CF_CONFIG_DIR="/etc/cloudflared"
 CF_CONFIG_FILE="$CF_CONFIG_DIR/config.yml"
 CREDS_FILE="$HOME/.cloudflared/${TUNNEL_UUID}.json"
@@ -468,7 +681,6 @@ else
   ok "Configuração do tunnel já existe — a manter"
 fi
 
-# Registos DNS
 if ! state_done "cf_dns_created" && [[ "$CF_DOMAIN" != "CONFIGURAR.com" ]]; then
   info "A criar registos DNS CNAME no Cloudflare..."
   cloudflared tunnel route dns "${TUNNEL_NAME}" "bots.${CF_DOMAIN}" 2>/dev/null \
@@ -489,9 +701,8 @@ sep
 
 init_agent() {
   local name="$1"
-  local sandbox_key="sandbox_${name}"
   local sandbox
-  sandbox=$(state_get "$sandbox_key")
+  sandbox=$(state_get "sandbox_${name}")
   sandbox="${sandbox:-on}"
   local workspace="$HOME/.openclaw/workspace-${name}"
 
@@ -527,9 +738,7 @@ echo -e "${BOLD}SERVIÇOS SYSTEMD${NC}"
 sep
 
 SCRIPT_USER="${SUDO_USER:-$(whoami)}"
-OC_WORKDIR="$(pwd)"
 OC_BIN=$(command -v openclaw 2>/dev/null || echo "$HOME/.npm-global/bin/openclaw")
-NODE_BIN=$(command -v node 2>/dev/null || echo "/usr/local/bin/node")
 
 # OpenClaw Gateway
 $SUDO tee "/etc/systemd/system/${SVC_GATEWAY}.service" > /dev/null << EOF
@@ -541,7 +750,7 @@ Documentation=https://openclaw.ai
 [Service]
 Type=simple
 User=${SCRIPT_USER}
-WorkingDirectory=${OC_WORKDIR}
+WorkingDirectory=${REPO_DIR}
 EnvironmentFile=${ENV_FILE}
 ExecStartPre=${OC_BIN} gateway stop --quiet || true
 ExecStart=${OC_BIN} gateway start
@@ -564,7 +773,7 @@ After=network.target ${SVC_GATEWAY}.service
 [Service]
 Type=simple
 User=${SCRIPT_USER}
-WorkingDirectory=${OC_WORKDIR}
+WorkingDirectory=${REPO_DIR}
 EnvironmentFile=${ENV_FILE}
 ExecStart=${NODE_BIN} src/api.js
 Restart=always
@@ -577,13 +786,46 @@ WantedBy=multi-user.target
 EOF
 ok "Serviço ${SVC_API}.service criado"
 
+# OpenRouter Proxy — só instala se tiver API key configurada
+PROXY_SVC_ENABLED=false
+if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
+  $SUDO tee "/etc/systemd/system/${SVC_PROXY}.service" > /dev/null << EOF
+[Unit]
+Description=${PROJECT_NAME} OpenRouter Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=${SCRIPT_USER}
+WorkingDirectory=${REPO_DIR}
+EnvironmentFile=${ENV_FILE}
+ExecStart=${NODE_BIN} src/openrouter-proxy.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  PROXY_SVC_ENABLED=true
+  ok "Serviço ${SVC_PROXY}.service criado"
+else
+  info "OPENROUTER_API_KEY não configurado — proxy não instalado"
+  info "Para instalar depois: edita $ENV_FILE e corre este script de novo"
+fi
+
 # cloudflared
 $SUDO cloudflared service install 2>/dev/null \
   && ok "cloudflared.service instalado" \
   || warn "cloudflared service install falhou — tenta: sudo cloudflared service install"
 
 $SUDO systemctl daemon-reload
-$SUDO systemctl enable "${SVC_GATEWAY}" "${SVC_API}" 2>/dev/null || true
+
+SVCS_TO_ENABLE="${SVC_GATEWAY} ${SVC_API}"
+[[ "$PROXY_SVC_ENABLED" == "true" ]] && SVCS_TO_ENABLE="${SVCS_TO_ENABLE} ${SVC_PROXY}"
+# shellcheck disable=SC2086
+$SUDO systemctl enable $SVCS_TO_ENABLE 2>/dev/null || true
 ok "Serviços registados e activados"
 
 # =============================================================================
@@ -608,6 +850,7 @@ start_svc() {
 
 start_svc "${SVC_GATEWAY}"
 start_svc "${SVC_API}"
+[[ "$PROXY_SVC_ENABLED" == "true" ]] && start_svc "${SVC_PROXY}"
 start_svc "cloudflared"
 
 # =============================================================================
@@ -618,24 +861,24 @@ echo -e "${BOLD}VERIFICAÇÃO FINAL${NC}"
 sep
 
 check_url() {
-  local label="$1"; local url="$2"
+  local label="$1" url="$2"
   curl -sf --max-time 5 "$url" >/dev/null 2>&1 \
     && ok "$label: OK" \
     || warn "$label: não responde ($url)"
 }
 
 check_url "Gateway local" "http://localhost:18789/health"
-check_url "API local" "http://localhost:3001/health"
+check_url "API local"     "http://localhost:3001/health"
+[[ "$PROXY_SVC_ENABLED" == "true" ]] && check_url "Proxy local" "http://127.0.0.1:3002/"
 [[ "$CF_DOMAIN" != "CONFIGURAR.com" ]] && check_url "Tunnel (bots)" "https://bots.${CF_DOMAIN}/health"
 
-# Campos por preencher
 STILL_MISSING=$(grep "=CONFIGURAR" "$ENV_FILE" 2>/dev/null | grep -v "^#" | cut -d= -f1 || true)
 if [[ -n "$STILL_MISSING" ]]; then
+  echo ""
   warn "Campos por configurar em $ENV_FILE:"
   echo "$STILL_MISSING" | while read -r f; do echo "    - $f"; done
 fi
 
-# WhatsApp QR
 if [[ "$WA_MODE" == "1" ]]; then
   echo ""
   warn "WhatsApp (QR code) — corre agora ou depois:"
@@ -651,17 +894,26 @@ sep
 
 echo ""
 echo -e "  ${BOLD}Config${NC}         $ENV_FILE (chmod 600)"
+echo -e "  ${BOLD}Código${NC}         $REPO_DIR"
 echo -e "  ${BOLD}Gateway${NC}        bots.${CF_DOMAIN} → localhost:18789"
 echo -e "  ${BOLD}API${NC}            api.${CF_DOMAIN} → localhost:3001"
+[[ "$PROXY_SVC_ENABLED" == "true" ]] && \
+  echo -e "  ${BOLD}Proxy${NC}          127.0.0.1:3002 → openrouter.ai"
 echo ""
 echo -e "  ${BOLD}Comandos úteis:${NC}"
 echo "    systemctl status ${SVC_GATEWAY} ${SVC_API} cloudflared"
-echo "    journalctl -u ${SVC_GATEWAY} -f"
+echo "    journalctl -u ${SVC_API} -f"
 echo "    openclaw gateway stop    # antes de reiniciar manualmente"
 echo ""
 echo -e "  ${BOLD}Webhooks a configurar:${NC}"
-echo "    Cal.eu  → https://api.${CF_DOMAIN}/webhook/cal"
+echo "    Cal.eu  → https://api.${CF_DOMAIN}/webhook/caleu"
 echo "    Kommo   → https://api.${CF_DOMAIN}/webhook/kommo"
+echo ""
+echo -e "  ${BOLD}API_TOKEN${NC} (para chamadas à API local):"
+echo "    ${API_TOKEN}"
+echo ""
+echo -e "  ${BOLD}WEBHOOK_SECRET${NC} (configurar no Cal.eu → Webhooks):"
+echo "    ${WEBHOOK_SECRET}"
 echo ""
 
 rm -f "$STATE_FILE"
