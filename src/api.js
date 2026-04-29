@@ -44,7 +44,7 @@ const safeLogger = {
   debug: (msg, data) => logger.debug(msg, redactSecrets(data))
 };
 
-const PORT = 3001;
+const PORT = parseInt(process.env.API_PORT || '3001', 10);
 
 const API_TOKEN      = process.env.API_TOKEN;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
