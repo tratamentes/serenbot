@@ -1,10 +1,8 @@
 /**
- * Cal.eu API v2  (instância europeia do Cal.com)
- * Base URL: https://api.cal.eu/v2
- *
- * Slugs activos (username: paulo-massagem-e-terapias-manuais):
- *   massagem-relaxante-30 | massagem-relaxante-60 | massagem-relaxante-90
- *   massagem-bliss-touch-60 | massagem-bliss-touch-90
+ * Cal.com / Cal.eu API v2
+ * Base URL configurável via CALCOM_BASE_URL:
+ *   cal.com → https://api.cal.com/v2  (default)
+ *   cal.eu  → https://api.cal.eu/v2
  */
 
 const logger = require('../utils/logger');
@@ -13,7 +11,7 @@ const { normalizePhone } = require('../utils/phone');
 const { getLisbonOffset, toIsoLisbon } = require('../utils/time');
 const { mapCalcomToUnified } = require('../core/models');
 
-const BASE_URL = 'https://api.cal.eu/v2';
+const BASE_URL = process.env.CALCOM_BASE_URL || 'https://api.cal.com/v2';
 const USERNAME = () => process.env.CALCOM_USERNAME;
 const TZ       = () => process.env.CALCOM_TIMEZONE  || 'Europe/Lisbon';
 const API_KEY  = () => process.env.CALCOM_API_KEY;
@@ -169,7 +167,7 @@ async function rescheduleBooking(bookingUid, newStartTime, reason = '') {
   try {
     const res = await http.post(
       `/bookings/${bookingUid}/reschedule`,
-      { start: newStartTime, rescheduledBy: 'noa@blisstouch.pt' },
+      { start: newStartTime, rescheduledBy: resolveEmail(null, null) },
       { headers: headers('2024-08-13') }
     );
     const booking = res.data?.data;
