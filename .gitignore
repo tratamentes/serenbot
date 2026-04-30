@@ -5,3 +5,6 @@
 .DS_Store
 src/graphify-out/
 node_modules/
+data/geocache.db
+cal.com_slugs.txt
+cal.com_slugs.txt.save

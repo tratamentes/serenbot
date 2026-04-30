@@ -13,7 +13,7 @@ const GRAPH_BASE = process.env.GRAPH_PATH
  * Carrega o grafo do disco baseado no alvo (cliente ou dev).
  */
 function loadGraph(target = 'cliente') {
-  const fileName = target === 'dev' ? 'graph-dev.json' : 'graph-cliente.json';
+  const fileName = 'graph.json';
   const fullPath = path.join(GRAPH_BASE, fileName);
   try {
     if (!fs.existsSync(fullPath)) {

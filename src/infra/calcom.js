@@ -5,11 +5,12 @@
  *   cal.eu  → https://api.cal.eu/v2
  */
 
-const logger = require('../utils/logger');
+const logger  = require('../utils/logger');
 const { createClient } = require('../utils/http');
 const { normalizePhone } = require('../utils/phone');
 const { getLisbonOffset, toIsoLisbon } = require('../utils/time');
 const { mapCalcomToUnified } = require('../core/models');
+const catalog = require('./calcom-catalog');
 
 const BASE_URL = process.env.CALCOM_BASE_URL || 'https://api.cal.com/v2';
 const USERNAME = () => process.env.CALCOM_USERNAME;
@@ -27,39 +28,22 @@ function headers(version = '2024-09-04') {
   };
 }
 
-// ─── MAPA SERVIÇO → SLUG ──────────────────────────────────────────────────────
+// ─── RESOLUÇÃO DE SLUG ────────────────────────────────────────────────────────
+// Delegado ao catálogo dinâmico (calcom-catalog.js).
+// Os slugs são lidos de data/calcom-catalog.json (gerado pela API do Cal.com).
+// Para forçar actualização: POST /admin/refresh-event-types
 
-const SLUG_MAP = {
-  consultorio: {
-    bliss:     { 60: 'massagem-bliss-touch-60', 90: 'massagem-bliss-touch-90' },
-    relaxante: { 30: 'massagem-relaxante-30', 60: 'massagem-relaxante-60', 90: 'massagem-relaxante-90' },
-  },
-  domicilio: {
-    bliss:     { 60: 'massagem-bliss-touch-60-domicilio', 90: 'massagem-bliss-touch-90-domicilio' },
-    relaxante: { 60: 'massagem-relaxante-60-domicilio', 90: 'massagem-relaxante-90-domicilio' },
-  },
-};
-
-function resolveSlug(service, duration, isDomicilio = false) {
-  const s = (service || '').toLowerCase();
-  const location = isDomicilio ? 'domicilio' : 'consultorio';
-  const map = SLUG_MAP[location];
-  for (const [key, durations] of Object.entries(map)) {
-    if (s.includes(key)) {
-      const slug = durations[duration];
-      if (slug) return slug;
-    }
-  }
-  return SLUG_MAP.consultorio.bliss[duration] || SLUG_MAP.consultorio.bliss[60];
+function resolveSlug(service, duration, isDomicilio = false, city = 'lisboa') {
+  return catalog.resolveSlug(service, duration, isDomicilio, city);
 }
 
 // ─── SLOTS DISPONÍVEIS ────────────────────────────────────────────────────────
 
-async function getAvailableSlots(dateStr, duration = 60, service = '', isDomicilio = false) {
+async function getAvailableSlots(dateStr, duration = 60, service = '', isDomicilio = false, city = 'lisboa') {
   if (!hasCalcom()) return [];
 
-  const slug = resolveSlug(service, duration, isDomicilio);
-  if (!slug) { logger.warn(`Sem slug para service="${service}" duration=${duration}`); return []; }
+  const slug = resolveSlug(service, duration, isDomicilio, city);
+  if (!slug) { logger.warn(`Sem slug para service="${service}" duration=${duration} city=${city}`); return []; }
 
   const offset = getLisbonOffset(dateStr);
   const start  = `${dateStr}T09:00:00${offset}`;
@@ -72,10 +56,10 @@ async function getAvailableSlots(dateStr, duration = 60, service = '', isDomicil
     });
     const byDay = res.data?.data || {};
     const raw   = Object.values(byDay).flat();
-    logger.debug(`Cal.eu: ${raw.length} slots para ${dateStr} (${slug})`);
+    logger.debug(`Cal.com: ${raw.length} slots para ${dateStr} (${slug})`);
     return raw.map(s => ({ time: s.start, datetime: new Date(s.start) }));
   } catch (err) {
-    logger.error('Cal.eu getAvailableSlots falhou', err?.response?.data || err.message);
+    logger.error('Cal.com getAvailableSlots falhou', err?.response?.data || err.message);
     return [];
   }
 }
@@ -92,10 +76,10 @@ function resolveEmail(email, phone) {
   return `sem-email@${domain}`;
 }
 
-async function createBooking({ duration, startTime, name, email, phone, nif, service, notes, isDomicilio = false, language = 'pt' }) {
+async function createBooking({ duration, startTime, name, email, phone, nif, service, notes, isDomicilio = false, language = 'pt', city = 'lisboa' }) {
   if (!hasCalcom()) { logger.warn('Cal.eu: sem API key'); return null; }
 
-  const slug            = resolveSlug(service, duration, isDomicilio);
+  const slug            = resolveSlug(service, duration, isDomicilio, city);
   const normalizedPhone = normalizePhone(phone);
   const resolvedEmail   = resolveEmail(email, phone);
 
@@ -337,9 +321,12 @@ function parseDate(dateStr) {
 }
 
 function isValidService(service, duration) {
-  const valid = { bliss: [60, 90], relaxante: [30, 60, 90] };
   const s = (service || '').toLowerCase();
-  return (valid[s] || []).includes(Number(duration));
+  const d = Number(duration);
+  if (s.includes('express'))                        return d === 30;
+  if (s.includes('quantum') || s.includes('visceral')) return d === 60;
+  if (s.includes('relaxa') || s.includes('terape')) return [60, 90].includes(d);
+  return false;
 }
 
 async function registerWebhook(subscriberUrl, triggers) {

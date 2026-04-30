@@ -15,7 +15,7 @@
 const logger = require('../utils/logger');
 const { createClient } = require('../utils/http');
 
-const BASE_URL           = 'https://api.cal.eu/v2';
+const BASE_URL           = process.env.CALCOM_BASE_URL || 'https://api.cal.com/v2';
 const REFRESH_INTERVAL   = 24 * 60 * 60 * 1000; // 24 horas
 const DEFAULT_BUFFER     = 30;                   // fallback se API falhar
 

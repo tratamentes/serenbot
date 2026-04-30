@@ -19,26 +19,36 @@ const ZONES = {
   RADIUS_25KM: 25,
 };
 
+// Taxa de deslocação mínima: 15 € (confirmado cal.com 2026-04-29)
+// Valores para zonas >5km: estimativas — confirmar com Paulo
 const SURCHARGES = {
-  5:  5,
-  10: 10,
-  15: 15,
-  20: 20,
-  25: 25,
+  5:  15,
+  10: 20,
+  15: 25,
+  20: 30,
+  25: 35,
 };
 
+// Preços base = preço de consultório (sem deslocação).
+// Domicílio = base + surcharge da zona.
+// Verificado contra cal.com 2026-04-29: relaxamento 60 ≤5km = 50+15 = 65€ ✓
 const BASE_PRICES = {
-  bliss_60:       60,
-  bliss_90:       75,
-  relaxante_30:   35,
-  relaxante_60:   45,
-  relaxante_90:   60,
+  relaxamento_60: 50,
+  relaxamento_90: 70,
+  terapeutica_60: 50,
+  terapeutica_90: 70,
+  express_30:     35,
+  visceral_60:    50,
+  quantum_60:     50,
 };
 
 function getPriceKey(service, duration) {
   const s = (service || '').toLowerCase();
-  const svc = s.includes('bliss') ? 'bliss' : 'relaxante';
-  return `${svc}_${duration}`;
+  if (s.includes('terape'))   return `terapeutica_${duration}`;
+  if (s.includes('express'))  return `express_${duration}`;
+  if (s.includes('visceral')) return `visceral_${duration}`;
+  if (s.includes('quantum'))  return `quantum_${duration}`;
+  return `relaxamento_${duration}`;
 }
 
 function getSurcharge(distanceKm) {

@@ -13,7 +13,8 @@ const {
   getAvailableSlots, createBooking, cancelBooking, rescheduleBooking,
   getBookingsByContact, getBookingsByDate, findClient, resolveSlug,
 } = require('./infra/calcom');
-const { getAfterEventBuffer, refresh: refreshEventTypes } = require('./infra/event-types-cache');
+const catalog = require('./infra/calcom-catalog');
+const { getAfterEventBuffer } = catalog;
 
 const { selectSlots }                         = require('./core/slots');
 const { handleCalEuWebhook }                  = require('./infra/webhook');
@@ -57,7 +58,7 @@ const BOT_NAME       = process.env.BOT_CLIENT_NAME || 'Bot';
  * Bloqueia acções de agendamento se não houver identificação.
  */
 async function ensureCustomer(req, res, next) {
-  const { telegram_id, phone, name } = req.body;
+  const { telegram_id, phone, name } = { ...req.query, ...req.body };
   
   if (!telegram_id && !phone) {
     return res.status(403).json({ error: 'Identificação necessária para esta acção.' });
@@ -173,9 +174,9 @@ const geoLimiter = rateLimit({
 
 // ─── ENDPOINTS ────────────────────────────────────────────────────────────────
 
-// GET /availability?date=YYYY-MM-DD&duration=60&service=bliss&domicilio=true
+// GET /availability?date=YYYY-MM-DD&duration=60&service=relaxamento&city=lisboa&domicilio=true
 app.get('/availability', availabilityLimiter, async (req, res) => {
-  let { date, duration = 60, service = 'bliss', preferredTime, domicilio } = req.query;
+  let { date, duration = 60, service = 'relaxamento', city = 'lisboa', preferredTime, domicilio } = req.query;
   if (!date) return res.status(400).json({ error: 'date obrigatório (YYYY-MM-DD)' });
 
   const isDomicilio = domicilio === 'true' || domicilio === '1';
@@ -194,9 +195,9 @@ app.get('/availability', availabilityLimiter, async (req, res) => {
   }
 
   try {
-    const slug        = resolveSlug(service, Number(duration), isDomicilio);
-    const afterBuffer = await getAfterEventBuffer(slug);
-    const all         = await getAvailableSlots(date, Number(duration), service, isDomicilio);
+    const slug        = resolveSlug(service, Number(duration), isDomicilio, city);
+    const afterBuffer = getAfterEventBuffer(slug);
+    const all         = await getAvailableSlots(date, Number(duration), service, isDomicilio, city);
     const selected    = selectSlots(all, Number(duration), preferred, afterBuffer);
     res.json({
       date, service,
@@ -227,9 +228,9 @@ app.get('/context', availabilityLimiter, (req, res) => {
   res.json(context);
 });
 
-// POST /booking { date, time, duration, service, name, email, phone, nif, notes, domicilio, language }
+// POST /booking { date, time, duration, service, city, name, email, phone, nif, notes, domicilio, language }
 app.post('/booking', bookingLimiter, requireToken, ensureCustomer, async (req, res) => {
-  const { date, time, duration = 60, service = 'bliss', name, email, phone, nif, notes, domicilio, language = 'pt', telegram_id } = req.body;
+  const { date, time, duration = 60, service = 'relaxamento', city = 'lisboa', name, email, phone, nif, notes, domicilio, language = 'pt', telegram_id } = req.body;
   if (!date || !time || !name) {
     return res.status(400).json({ error: 'date, time e name são obrigatórios' });
   }
@@ -240,7 +241,7 @@ app.post('/booking', bookingLimiter, requireToken, ensureCustomer, async (req, r
     const booking = await createBooking({
       duration:  Number(duration),
       startTime: toIsoLisbon(date, time),
-      name, email, phone, nif, service, notes, isDomicilio, language,
+      name, email, phone, nif, service, notes, isDomicilio, language, city,
     });
 
     const uid = booking?.id;
@@ -429,9 +430,9 @@ app.get('/distance', geoLimiter, async (req, res) => {
   }
 });
 
-// GET /domicilio-check?address=...&service=bliss&duration=90
+// GET /domicilio-check?address=...&service=relaxamento&duration=90
 app.get('/domicilio-check', geoLimiter, async (req, res) => {
-  const { address, service = 'bliss', duration = 60 } = req.query;
+  const { address, service = 'relaxamento', duration = 60 } = req.query;
   if (!address) return res.status(400).json({ error: 'address obrigatório' });
 
   try {
@@ -504,15 +505,107 @@ app.post('/notify-paulo', bookingLimiter, requireToken, async (req, res) => {
   }
 });
 
-// POST /admin/refresh-event-types — força re-fetch da config do Cal.eu
+// ─── ALIASES GET PARA O AGENTE (web_fetch só suporta GET) ────────────────────
+// Só acessíveis de localhost (IP check em requireToken já garante isto).
+
+// GET /book?date=&time=&service=&duration=&city=&name=&phone=&email=&telegram_id=&notes=&domicilio=
+app.get('/book', bookingLimiter, requireToken, ensureCustomer, async (req, res) => {
+  const { date, time, duration = 60, service = 'relaxamento', city = 'lisboa', name, email, phone, nif, notes, domicilio, language = 'pt', telegram_id } = req.query;
+  if (!date || !time || !name) {
+    return res.status(400).json({ error: 'date, time e name são obrigatórios' });
+  }
+  const isDomicilio = !!domicilio && domicilio !== 'false' && domicilio !== '0';
+  try {
+    const booking = await createBooking({
+      duration:  Number(duration),
+      startTime: toIsoLisbon(date, time),
+      name, email, phone, nif, service, notes, isDomicilio, language, city,
+    });
+    const uid = booking?.id;
+    res.json({ success: true, uid, confirmUrl: uid ? `https://cal.com/booking/${uid}` : null });
+    notifyBooking(booking).catch(err => logger.warn('Notificação booking falhou', err.message));
+    syncBookingToKommo(booking, telegram_id, { source: 'Telegram', language: language || 'pt' })
+      .catch(err => logger.warn('CRM booking falhou', err.message));
+  } catch (err) {
+    logger.error('API /book (GET alias) erro', err);
+    res.status(400).json({ error: err.message, field: err.field || null });
+  }
+});
+
+// GET /book-cancel?uid=&reason=
+app.get('/book-cancel', bookingLimiter, requireToken, async (req, res) => {
+  const { uid, reason = '' } = req.query;
+  if (!uid) return res.status(400).json({ error: 'uid obrigatório' });
+  try {
+    const bookingData = await getBookingByUid(uid);
+    const attendee    = bookingData?.attendees?.[0];
+    await cancelBooking(uid, reason);
+    res.json({ success: true, uid });
+    notifyCancel(uid, { name: attendee?.name, phone: attendee?.phoneNumber, reason })
+      .catch(err => logger.warn('Notificação cancel falhou', err.message));
+  } catch (err) {
+    logger.error('API /book-cancel erro', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /book-reschedule?uid=&date=&time=&reason=
+app.get('/book-reschedule', bookingLimiter, requireToken, async (req, res) => {
+  const { uid, date, time, reason = 'reagendamento a pedido do cliente' } = req.query;
+  if (!uid || !date || !time) return res.status(400).json({ error: 'uid, date e time obrigatórios' });
+  try {
+    const startTime = toIsoLisbon(date, time);
+    let effectiveUid = uid;
+    let booking;
+    try {
+      booking = await rescheduleBooking(effectiveUid, startTime, reason);
+    } catch (firstErr) {
+      const suggested = firstErr?.response?.data?.error?.message?.match(/uid=([A-Za-z0-9_-]{10,})\./)?.[1];
+      if (suggested && suggested !== effectiveUid) {
+        logger.warn('UID desactualizado, a retentar', { oldUid: effectiveUid, newUid: suggested });
+        effectiveUid = suggested;
+        booking = await rescheduleBooking(effectiveUid, startTime, reason);
+      } else throw firstErr;
+    }
+    const oldBooking = await getBookingByUid(effectiveUid).catch(() => null);
+    const oldStart   = oldBooking?.start;
+    const newUid     = booking?.uid;
+    res.json({ success: true, uid: newUid, start: booking?.start, confirmUrl: newUid ? `https://cal.com/booking/${newUid}` : undefined });
+    notifyReschedule(booking, oldStart).catch(err => logger.warn('Notificação reschedule falhou', err.message));
+  } catch (err) {
+    logger.error('API /book-reschedule erro', err.response?.data || err.message || err);
+    res.status(err.response?.status || 500).json({ error: err.response?.data?.error?.message || err.message });
+  }
+});
+
+// GET /alert?message=
+app.get('/alert', bookingLimiter, requireToken, async (req, res) => {
+  const { message } = req.query;
+  if (!message) return res.status(400).json({ error: 'message obrigatório' });
+  try {
+    await sendToAdmin([`🔔 ${BOT_NAME}: ${message}`]);
+    logger.info('alert enviado', { message });
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('API /alert erro', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /admin/refresh-event-types — força re-fetch do catálogo Cal.com
 app.post('/admin/refresh-event-types', requireToken, async (req, res) => {
   try {
-    await refreshEventTypes();
-    res.json({ ok: true, message: 'Event types actualizados' });
+    await catalog.refresh();
+    res.json({ ok: true, message: 'Catálogo actualizado', catalog: catalog.getCatalog() });
   } catch (err) {
     logger.error('API /admin/refresh-event-types erro', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// GET /admin/catalog — inspecção do catálogo de event types
+app.get('/admin/catalog', requireToken, (req, res) => {
+  res.json(catalog.getCatalog());
 });
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
@@ -627,7 +720,7 @@ const CSS = `
 app.get('/admin/sessions', requireToken, async (req, res) => {
   const fs   = require('fs');
   const path = require('path');
-  const agentName    = process.env.OPENCLAW_AGENT_NAME || 'cliente';
+  const agentName    = process.env.OPENCLAW_AGENT_NAME || 'main';
   const SESSIONS_DIR = process.env.OPENCLAW_SESSIONS_DIR
     || path.join(process.env.HOME, `.openclaw/agents/${agentName}/sessions`);
   const token   = req.headers['x-api-token'] || req.query.token;
@@ -761,5 +854,6 @@ app.post('/webhook/caleu', verifyWebhook, async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  logger.info(`Cal.eu API local a correr na porta ${PORT}`);
+  logger.info(`Cal.com API local a correr na porta ${PORT}`);
+  catalog.init().catch(err => logger.warn('calcom-catalog: init falhou', err.message));
 });
