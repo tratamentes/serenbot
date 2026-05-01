@@ -1,7 +1,7 @@
 # SerenBot — Manual para IA
 
 > Documento vivo. Actualizar após cada sessão de trabalho que mude a arquitectura.
-> Última revisão: 2026-04-30
+> Última revisão: 2026-05-01
 
 ---
 
@@ -16,31 +16,40 @@ Não é um bot autónomo — é o backend que o agente invoca via HTTP quando pr
 ## Arquitectura
 
 ```
-Telegram (clientes)
+Telegram (clientes)                    Telegram (João — admin)
+        │                                       │
+        ▼                                       ▼
+  OpenClaw Gateway — Seren             OpenClaw Gateway — Nexus
+  localhost:18789                       localhost:18790
+  suporte_tratamentes_bot               clinicatm_bot
+  ~/.openclaw/workspace/                ~/.openclaw-admin/.openclaw/workspace/
         │
-        ▼
-  OpenClaw Gateway (localhost:18789)
-        │
-        ▼
-  OpenClaw Agent "main"  ←──  suporte_tratamentes_bot (bot dos clientes)
-        │                     Token: 8726268422:AAEEQ7...
         ▼
   SerenBot API (localhost:3002)   ←── EnvironmentFile: /opt/serenbot/.env
      │         │         │
      ▼         ▼         ▼
-  Cal.com   Kommo CRM  Telegram Bot B
-  (agenda)  (leads)    (clinicatm_bot — notifica admin João)
+  Cal.com   Kommo CRM  clinicatm_bot
+  (agenda)  (leads)    (notificações admin via notify.js)
+
+Telegram (João — OTP login clinica)
+        ↑
+  clinicatmotp_bot  ←── /home/tratame3/config.php
 ```
 
-**Dois bots Telegram distintos:**
-- `suporte_tratamentes_bot` (`8726268422:...`) — bot dos clientes, gerido pelo OpenClaw agente `main`
-- `clinicatm_bot` (`8529403509:...`) — bot de notificações ao admin João, gerido pelo SerenBot (`TELEGRAM_BOT_B_TOKEN`)
+**Três bots Telegram:**
+- `suporte_tratamentes_bot` (`8726268422:...`) — **Seren**, bot dos clientes, OpenClaw agente `main`, porta 18789
+- `clinicatm_bot` (`8529403509:...`) — **Nexus**, agente admin OpenClaw (porta 18790) + notificações SerenBot ao João
+- `clinicatmotp_bot` (`8649911177:...`) — apenas envia códigos OTP para login em clinica.tratamentes.pt
 
-**OpenClaw agente `main` = bot de clientes** (`suporte_tratamentes_bot`). O nome do agente em `~/.openclaw/agents/` é `main`; a variável `OPENCLAW_AGENT_NAME=main` no `.env` do SerenBot aponta para esse agente ao listar sessões.
+**clinicatm_bot serve dois propósitos sem conflito:**
+1. OpenClaw (porta 18790) lê mensagens de João e responde como Nexus
+2. SerenBot (`notify.js`) envia notificações ao João via sendMessage
+Não há conflito — ambos só usam sendMessage em saída; o OpenClaw lê os updates de entrada.
 
 **Zero portas expostas** — tudo chega via Cloudflare Tunnel:
-- `bots.tratamentes.pt` → localhost:18789 (OpenClaw Gateway)
+- `bots.tratamentes.pt` → localhost:18789 (OpenClaw Gateway Seren)
 - `api.tratamentes.pt`  → localhost:3002  (SerenBot API)
+- Gateway Nexus (18790) — interno, só João via Telegram
 
 ---
 
@@ -52,7 +61,7 @@ Telegram (clientes)
 | `src/infra/calcom.js` | Cal.com v2 API — slots, reservas, cancelamentos |
 | `src/infra/calcom-catalog.js` | Catálogo dinâmico de slugs Cal.com (lê da API, persiste em disco, serve lookups síncronos) |
 | `src/infra/kommo.js` | Kommo CRM — contacts, leads, pipeline moves |
-| `src/infra/notify.js` | Notificações Telegram para o admin (Bot B) |
+| `src/infra/notify.js` | Notificações Telegram para o admin (clinicatm_bot) |
 | `src/infra/geocoding.js` | Geocoding via Nominatim, cálculo de distância ao domicílio |
 | `src/infra/webhook.js` | Processamento de webhooks Cal.com (CREATED/RESCHEDULED/CANCELLED) |
 | `src/core/models.js` | Modelo unificado `UnifiedBooking` (normaliza respostas Cal.com) |
@@ -157,6 +166,8 @@ Ficheiro: `/opt/serenbot/.env` (chmod 600, root:root)
 
 | Variável | Valor / Notas |
 |---|---|
+| `APP_NAME` | `Tratamentes` |
+| `BOT_CLIENT_NAME` | `Seren` — nome do bot nos logs e notificações |
 | `KOMMO_SUBDOMAIN` | `joaogoulart` |
 | `KOMMO_ACCESS_TOKEN` | JWT — **expira 2026-06-29** — renovar antes |
 | `KOMMO_RESPONSIBLE_USER_ID` | `14608143` |
@@ -164,16 +175,18 @@ Ficheiro: `/opt/serenbot/.env` (chmod 600, root:root)
 | `KOMMO_PIPELINE_ATIVOS_ID` | `12990767` (Clientes Ativos) |
 | `KOMMO_STATUS_AGENDADO` | `99528395` |
 | `KOMMO_STATUS_ATIVOS_AGENDADO` | `100167911` |
-| `CALCOM_BASE_URL` | `https://api.cal.com/v2` (mudar para cal.eu quando estabilizar) |
+| `CALCOM_BASE_URL` | `https://api.cal.com/v2` |
 | `CALCOM_API_KEY` | `cal_live_...` |
 | `CALCOM_USERNAME` | `joao-goulart-tratamentes-lisboa-cascais` |
 | `CALCOM_TIMEZONE` | `Europe/Lisbon` |
 | `TELEGRAM_BOT_B_TOKEN` | `8529403509:...` — clinicatm_bot (notificações admin) |
 | `TELEGRAM_ADMIN_ID` | `6279806258` (João) |
+| `TELEGRAM_TOKEN_AGENT1` | `8726268422:...` — suporte_tratamentes_bot (Seren) |
 | `API_TOKEN` | protege endpoints SerenBot |
 | `WEBHOOK_SECRET` | HMAC para webhooks Cal.com |
 | `OPENCLAW_AGENT_NAME` | `main` (agente OpenClaw = suporte_tratamentes_bot) |
-| `OPENROUTER_API_KEY` | opcional — proxy não instalado |
+
+**OTP clinica.tratamentes.pt:** `/home/tratame3/config.php` → `TELEGRAM_BOT_TOKEN=8649911177:...` (clinicatmotp_bot, separado)
 
 ---
 
@@ -194,30 +207,40 @@ curl -s "https://joaogoulart.kommo.com/api/v4/contacts/custom_fields" \
 
 ## Serviços systemd
 
-| Serviço | Comando | Porto |
-|---|---|---|
-| `serenbot-api` | `node src/api.js` | 3002 |
-| `openclaw-gateway` | openclaw gateway | 18789 |
-| `serenbot-proxy` | `node src/openrouter-proxy.js` | não instalado |
+| Serviço | Comando | Porto | Notas |
+|---|---|---|---|
+| `serenbot-api` | `node src/api.js` | 3002 | EnvironmentFile: /opt/serenbot/.env |
+| `openclaw-gateway` | openclaw gateway | 18789 | Seren — bot clientes |
+| `openclaw-admin-gateway` | openclaw gateway (HOME=~/.openclaw-admin) | 18790 | Nexus — bot admin João |
+| `serenbot-proxy` | `node src/openrouter-proxy.js` | — | não instalado |
 
 ```bash
+# Seren (clientes)
+systemctl --user status openclaw-gateway.service
+journalctl --user -u openclaw-gateway.service -f
+
+# Nexus (admin)
+systemctl --user status openclaw-admin-gateway.service
+journalctl --user -u openclaw-admin-gateway.service -f
+
+# SerenBot API
 sudo systemctl status serenbot-api
 sudo journalctl -u serenbot-api -f
-systemctl --user status openclaw-gateway.service
 ```
 
 ---
 
-## Estado das integrações (2026-04-30)
+## Estado das integrações (2026-05-01)
 
 | Integração | Estado | Notas |
 |---|---|---|
 | Kommo CRM | ✅ Token válido, IDs confirmados | Expira 2026-06-29 |
 | Cal.com | ✅ API key e username configurados | Catálogo: 30 event types carregados |
-| Telegram Bot B (admin) | ✅ clinicatm_bot activo | TELEGRAM_ADMIN_ID = 6279806258 |
-| OpenClaw / suporte_tratamentes_bot | ✅ Testado e funcional | Agente `main`, allowFrom: só João por agora |
+| Seren (suporte_tratamentes_bot) | ✅ Activo, porta 18789 | Agente `main`, allowFrom: só João por agora |
+| Nexus (clinicatm_bot) | ✅ Activo, porta 18790 | Agente admin, só João (6279806258) |
+| clinicatmotp_bot | ✅ Activo | OTP login clinica.tratamentes.pt |
 | Geocoding | ✅ Nominatim | Cache SQLite em data/geocache.db |
-| OpenRouter | ⚠️ Chave presente, proxy não instalado | Baixa prioridade |
+| OpenRouter | ✅ Claude Sonnet 4.6 | Ambos os gateways usam openrouter:default |
 | Cloudflare Tunnel (api.tratamentes.pt) | ⚠️ Por configurar | localhost:3002 |
 
 ---
@@ -226,7 +249,10 @@ systemctl --user status openclaw-gateway.service
 
 - **Token Kommo expira**: 2026-06-29 — renovar em Kommo → Integrações antes dessa data
 - **Geocache**: TTL 90 dias, limpa automaticamente no arranque
-- **Sessions OpenClaw**: em `~/.openclaw/agents/main/sessions/`
-- **Catálogo Cal.com**: `data/calcom-catalog.json` — actualizar via `POST /admin/refresh-event-types` se adicionares novos event types no Cal.com
-- **Logs**: `sudo journalctl -u serenbot-api --since today`
-- **Abrir bot a todos os clientes**: editar `~/.openclaw/credentials/telegram-default-allowFrom.json`
+- **Sessions Seren**: `~/.openclaw/agents/main/sessions/`
+- **Sessions Nexus**: `~/.openclaw-admin/.openclaw/agents/admin/sessions/`
+- **Workspace Nexus**: `~/.openclaw-admin/.openclaw/workspace/` — treinar o Nexus aqui
+- **Catálogo Cal.com**: `data/calcom-catalog.json` — actualizar via `POST /admin/refresh-event-types`
+- **Logs SerenBot**: `sudo journalctl -u serenbot-api --since today`
+- **Abrir Seren a todos os clientes**: editar `~/.openclaw/credentials/telegram-default-allowFrom.json`
+- **Express trust proxy**: `app.set('trust proxy', 1)` já configurado — necessário para rate-limiter atrás do Cloudflare

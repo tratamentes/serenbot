@@ -29,6 +29,7 @@ const {
 const { getContext } = require('./utils/graph-context');
 
 const app  = express();
+app.set('trust proxy', 1);
 app.use(express.json());
 
 // ─── SEGURANÇA: REDAÇÃO DE SEGREDOS ──────────────────────────────────────────
