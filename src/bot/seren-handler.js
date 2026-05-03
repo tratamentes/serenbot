@@ -148,12 +148,23 @@ async function findAvailableDates(session) {
 
 async function handleUpdate(chatId, from, text) {
   const session = getSession(chatId);
+  const isFirstMessage = session.state === 'NEW';
+
   session.name      = session.name || from?.first_name || '';
   session.telegramId = session.telegramId || from?.id;
 
   for (const [key, vid] of Object.entries(session.lastVariants || {})) recordContinued(key, vid);
   session.lastVariants = {};
   cancelFollowUps(chatId);
+
+  // Notifica admin na primeira mensagem de cada sessão (cooldown 30min em api.js)
+  if (isFirstMessage) {
+    localApi.get('/telegram-ping', { params: {
+      sender:   String(chatId),
+      name:     from?.first_name || '',
+      username: from?.username || '',
+    }}).catch(() => {});
+  }
 
   const vars = { nome: session.name };
 
@@ -264,15 +275,19 @@ async function handleUpdate(chatId, from, text) {
       return;
     }
     if (session.state === 'NEW') {
-      session.state = 'QUALIFYING';
-      await send(chatId, fillTemplate(pickVariant('qualifying_question', session), vars));
-      scheduleFollowUps(chatId, session.name, null);
-      return;
+      // Se o intent é conhecido (saudação, preço, serviços, booking) — responde
+      // directamente e passa para QUALIFYING; não interrompe com o menu.
+      // Só mostra o menu de qualificação se a mensagem for genuinamente opaca.
+      if (intent === 'unknown') {
+        session.state = 'QUALIFYING';
+        await send(chatId, fillTemplate(pickVariant('qualifying_question', session), vars));
+        scheduleFollowUps(chatId, session.name, null);
+        return;
+      }
+      session.state = 'QUALIFYING'; // actualiza estado mas cai para os handlers abaixo
     }
-    // Texto livre no estado QUALIFYING sem match — tenta intent genérico
-    if (intent !== 'unknown') {
-      // cai para os handlers de intent em baixo
-    } else {
+    // QUALIFYING sem source match e intent conhecido — cai para handlers de intent
+    if (intent === 'unknown') {
       await send(chatId, 'Desculpa, não percebi bem 😊 Podes escolher uma das opções (1 a 5) ou descrever o que procuras?');
       return;
     }
