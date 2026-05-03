@@ -1,9 +1,8 @@
 /**
  * Proxy local para OpenRouter — injeta transforms:[] em cada pedido.
- * Desactiva o Presidio PII redaction que substituía "Paulo" por [PERSON_NAME].
+ * Desactiva o Presidio PII redaction que substituía nomes por [PERSON_NAME].
  *
- * Porta: 3002 (127.0.0.1 apenas)
- * OpenClaw deve usar baseUrl: http://127.0.0.1:3002/api/v1
+ * Porta: 3003 (127.0.0.1 apenas — não instalado por defeito)
  */
 require('dotenv').config();
 

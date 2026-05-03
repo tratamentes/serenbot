@@ -9,20 +9,23 @@ const logger = require('./logger');
 const GRAPH_BASE = process.env.GRAPH_PATH
   || path.join(process.env.HOME || '/root', 'graphify-out');
 
-/**
- * Carrega o grafo do disco baseado no alvo (cliente ou dev).
- */
-function loadGraph(target = 'cliente') {
-  const fileName = 'graph.json';
-  const fullPath = path.join(GRAPH_BASE, fileName);
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let _cachedGraph = null;
+let _cacheTime   = 0;
+
+function loadGraph() {
+  if (_cachedGraph && Date.now() - _cacheTime < CACHE_TTL_MS) return _cachedGraph;
+  const fullPath = path.join(GRAPH_BASE, 'graph.json');
   try {
     if (!fs.existsSync(fullPath)) {
       logger.warn('Grafo não encontrado em ' + fullPath);
       return null;
     }
-    return JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    _cachedGraph = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    _cacheTime   = Date.now();
+    return _cachedGraph;
   } catch (err) {
-    logger.error('Erro ao carregar grafo ' + target, err);
+    logger.error('Erro ao carregar grafo', err);
     return null;
   }
 }
@@ -31,7 +34,7 @@ function loadGraph(target = 'cliente') {
  * Procura um nó por label ou ID e retorna o seu contexto.
  */
 function getContext(term, target = 'cliente') {
-  const graph = loadGraph(target);
+  const graph = loadGraph();
   if (!graph || !graph.nodes) return "Contexto não disponível.";
 
   const termLower = term.toLowerCase();

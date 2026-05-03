@@ -91,7 +91,7 @@ async function handleReschedule(oldUid, newUid, newStartTime, payload) {
   // Nova data/hora — Cal.eu envia UTC (.000Z); converter para Lisboa antes de usar no título
   const { date: bookingDate, time: bookingTime } = utcToLisbon(newStartTime);
   const newTs  = newStartTime ? Math.floor(new Date(newStartTime).getTime() / 1000) : Math.floor(Date.now() / 1000);
-  const newUrl = `https://cal.eu/booking/${newBookingUid}`;
+  const newUrl = `https://cal.com/booking/${newBookingUid}`;
 
   // Dados do cliente e serviço a partir do payload
   const attendee    = payload?.attendees?.[0];

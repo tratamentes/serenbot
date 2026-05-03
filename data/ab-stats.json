@@ -1,0 +1,114 @@
+{
+  "qualifying_question": {
+    "A": {
+      "shown": 7,
+      "continued": 7
+    }
+  },
+  "greeting_terapeutica": {
+    "A": {
+      "shown": 5,
+      "continued": 5
+    },
+    "B": {
+      "shown": 1,
+      "continued": 1
+    }
+  },
+  "llm": {
+    "LLM": {
+      "shown": 0,
+      "continued": 1
+    }
+  },
+  "ask_location": {
+    "A": {
+      "shown": 4,
+      "continued": 4
+    }
+  },
+  "booking_link": {
+    "A": {
+      "shown": 2,
+      "continued": 0
+    }
+  },
+  "service_info_terapeutica": {
+    "A": {
+      "shown": 1,
+      "continued": 1
+    }
+  },
+  "ask_duration": {
+    "A": {
+      "shown": 3,
+      "continued": 3
+    }
+  },
+  "ask_phone": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "ask_name": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "ask_email": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "ask_date": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "ask_time": {
+    "A": {
+      "shown": 2,
+      "continued": 1
+    }
+  },
+  "confirm_booking": {
+    "A": {
+      "shown": 1,
+      "continued": 1
+    }
+  },
+  "booking_success": {
+    "A": {
+      "shown": 1,
+      "continued": 0
+    }
+  },
+  "cancel_info": {
+    "A": {
+      "shown": 3,
+      "continued": 3
+    }
+  },
+  "greeting_generic": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "service_info_generic": {
+    "A": {
+      "shown": 2,
+      "continued": 1
+    }
+  },
+  "followup_1": {
+    "A": {
+      "shown": 1,
+      "continued": 0
+    }
+  }
+}

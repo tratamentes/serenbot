@@ -323,7 +323,7 @@ async function createOrUpdateLead({
     const interesseId    = mapInterestToEnum(service, duration);
     const leadOrigemId   = mapOrigemLead(contactOrigem || utmSource, contactSuborigem || utmMedium);
     const leadSuborigemId= mapSuborigemLead(contactSuborigem || utmMedium);
-    const bookingUrlFinal = bookingUid ? `https://cal.eu/booking/${bookingUid}` : bookingUrl;
+    const bookingUrlFinal = bookingUid ? `https://cal.com/booking/${bookingUid}` : bookingUrl;
 
     // Campos de reserva (usados tanto na criação como na actualização)
     const bookingFields = [

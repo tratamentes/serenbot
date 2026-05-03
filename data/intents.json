@@ -1,0 +1,118 @@
+{
+  "_note": "Padrões em minúsculas sem acentos (normalizados antes de comparar). Raízes curtas apanham variantes automaticamente.",
+
+  "greeting": [
+    "oi", "ola", "olá", "bom dia", "boa tarde", "boa noite", "boas", "boa",
+    "hello", "hi", "hey", "tudo bem", "tudo bom", "como esta", "como estás",
+    "boa tarde", "boa manha", "bom dia a todos", "saludos"
+  ],
+
+  "booking": [
+    "marcar", "marc", "agendar", "agend", "reservar", "reserv",
+    "disponibilidade", "disponivel", "disponiv", "dispon",
+    "horario", "horarios", "horári", "ver horario", "ver hora",
+    "quero marcar", "quero agendar", "quero reservar", "fazer marcacao",
+    "quando tem", "quando ha", "quando existe", "quando posso",
+    "uma sessao", "quero sessao", "uma consulta", "marcar consulta",
+    "marcar sessao", "agendar sessao", "sessao disponivel",
+    "ver agenda", "ver calendario", "ver datas", "proxima data",
+    "quero ir", "ir la", "ir a clinica", "quero vir",
+    "pode ser", "vamos marcar", "vamos agendar",
+    "tenho interesse", "quero comecar", "quero iniciar"
+  ],
+
+  "services": [
+    "tensao muscular", "tensão muscular", "tenção muscular",
+    "tensao", "tensão", "tencao", "tenção",
+    "visceral", "viscer",
+    "quantum", "quantum touch", "quantun", "quatum",
+    "anti-stress", "antistress", "anti stress", "antiestresse",
+    "relaxamento", "relaxante", "relaxar", "relaxacao",
+    "terapeutica", "terapêutica", "terapia", "terapias",
+    "lomi", "lomi-lomi", "lomi lomi", "havaiana",
+    "sueca", "sueco", "massagem sueca",
+    "massagem", "masagem", "massag",
+    "tratamento", "tratamentos",
+    "saber mais", "quero saber", "quero saber mais",
+    "como funciona", "como e", "como é", "como funciona",
+    "o que e", "o que é", "o que fazem", "o que oferecem",
+    "explica", "explique", "conta-me", "fala-me", "descrev",
+    "sessao", "sessão", "o que inclui", "o que abrange",
+    "que servicos", "que tratamentos", "que tecnicas",
+    "dores", "dor", "contractura", "contracturas", "contraturas",
+    "costas", "cervical", "ombro", "lombar", "ciatica", "ciática",
+    "stress", "ansiedade", "cansaco", "cansaço", "fadiga"
+  ],
+
+  "pricing": [
+    "preco", "preço", "preços", "precos",
+    "quanto custa", "quanto e", "quanto é", "qual o valor",
+    "valor", "valores", "euros", "€", "custo", "custos",
+    "tarifa", "tarifas", "tabela de precos", "tabela de preços",
+    "orcamento", "orçamento",
+    "mais barato", "mais acessivel", "economico",
+    "quanto fica", "fica quanto", "custa quanto",
+    "quanto cobram", "cobram quanto"
+  ],
+
+  "location": [
+    "onde fica", "onde ficam", "onde estao", "onde estão",
+    "morada", "endereco", "endereço",
+    "lisboa", "alvalade", "jorge colaco", "jorge colaço",
+    "cascais", "clinica now", "adelino amaro",
+    "domicilio", "domicílio", "em casa", "vem a casa", "vem ca", "vem cá",
+    "deslocacao", "deslocação", "deslocam-se",
+    "como chegar", "como ir", "estacionamento",
+    "perto de", "zona de", "bairro"
+  ],
+
+  "hours": [
+    "horario de funcionamento", "horario de atendimento",
+    "quando abrem", "quando fecham", "quando estao abertos",
+    "que horas", "a que horas", "horas de abertura",
+    "fim de semana", "fds", "sabado", "sábado", "domingo",
+    "segunda", "terca", "terça", "quarta", "quinta", "sexta",
+    "trabalham ao", "atendem ao", "abertos ao",
+    "funcionam quando", "atendem quando"
+  ],
+
+  "cancel": [
+    "cancelar", "cancel", "desmarcar", "desmarc",
+    "nao posso", "não posso", "nao consigo", "não consigo",
+    "quero cancelar", "preciso cancelar",
+    "cancelamento", "cancelamentos",
+    "reagendar", "remarcar", "mudar a data", "mudar o dia",
+    "adiar", "antecipar", "alterar marcacao", "alterar reserva"
+  ],
+
+  "affirmative": [
+    "sim", "s", "yes", "y", "ok", "okay",
+    "boa", "vamos", "vai", "vá",
+    "claro", "claro que sim", "com certeza", "certamente",
+    "confirmo", "confirmar", "confirmado",
+    "perfeito", "ótimo", "otimo", "excelente",
+    "exato", "exacto", "correto", "correcto", "certo",
+    "quero", "quero sim", "quero isso",
+    "bora", "force", "forca", "força",
+    "por favor", "obrigado", "obrigada",
+    "tudo bem", "está bem", "ta bem", "tá bem",
+    "boa ideia", "parece bem", "combinado"
+  ],
+
+  "inappropriate": [
+    "sexo", "sexual", "sexuais",
+    "foder", "foda", "fodas", "fodido", "fodida",
+    "cu", "anal",
+    "chupar", "chupa", "chupada",
+    "mamar",
+    "punheta", "punhetas",
+    "masturb",
+    "pila", "pica",
+    "vagina", "buceta",
+    "porno", "pornô", "xxx",
+    "prostitui",
+    "happy ending", "final feliz",
+    "erótic", "erotic",
+    "sensual"
+  ]
+}

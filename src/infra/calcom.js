@@ -1,8 +1,7 @@
 /**
- * Cal.com / Cal.eu API v2
- * Base URL configurável via CALCOM_BASE_URL:
- *   cal.com → https://api.cal.com/v2  (default)
- *   cal.eu  → https://api.cal.eu/v2
+ * Cal.com API v2
+ * Base URL: https://api.cal.com/v2 (CALCOM_BASE_URL)
+ * Cal.eu foi abandonado — usar sempre cal.com
  */
 
 const logger  = require('../utils/logger');
@@ -190,9 +189,17 @@ async function findClient({ email, phone }) {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .find(b => {
           const att = b.attendees[0];
-          return att.name && att.email &&
-            !att.email.startsWith('sem-email') &&
-            !att.email.startsWith('no-reply');
+          if (!att.name || !att.email) return false;
+          if (att.email.startsWith('sem-email') || att.email.startsWith('no-reply')) return false;
+          // Validar que o resultado corresponde ao critério pesquisado
+          if (params.attendeeEmail) {
+            if (att.email.toLowerCase() !== params.attendeeEmail.toLowerCase()) return false;
+          }
+          if (params.attendeePhoneNumber) {
+            const returnedPhone = normalizePhone(att.phoneNumber);
+            if (returnedPhone && returnedPhone !== params.attendeePhoneNumber) return false;
+          }
+          return true;
         });
       if (found) {
         const att    = found.attendees[0];
@@ -244,13 +251,27 @@ async function getBookingsByContact({ email, phone }) {
         params:  { ...params, afterStart, take: 20 },
       });
       for (const b of res.data?.data || []) {
-        if (!seen.has(b.uid) && (b.status === 'accepted' || b.status === 'pending') && new Date(b.start) >= today) {
-          seen.add(b.uid);
-          results.push(b);
+        if (seen.has(b.uid)) continue;
+        if (b.status !== 'accepted' && b.status !== 'pending') continue;
+        if (new Date(b.start) < today) continue;
+
+        // Verificar que o attendee corresponde ao contacto pesquisado
+        const att = b.attendees?.[0];
+        if (att) {
+          if (params.attendeeEmail) {
+            if (att.email?.toLowerCase() !== params.attendeeEmail.toLowerCase()) continue;
+          }
+          if (params.attendeePhoneNumber) {
+            const attPhone = normalizePhone(att.phoneNumber || '');
+            if (attPhone && attPhone !== normalizedPhone) continue;
+          }
         }
+
+        seen.add(b.uid);
+        results.push(b);
       }
     } catch (err) {
-      logger.warn('Cal.eu getBookingsByContact falhou', err?.response?.data || err.message);
+      logger.warn('Cal.com getBookingsByContact falhou', err?.response?.data || err.message);
     }
   }
 

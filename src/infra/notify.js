@@ -47,7 +47,7 @@ async function notifyBooking(booking) {
   if (booking.metadata?.nif) lines.push(`🧾 NIF: ${booking.metadata.nif}`);
   if (booking.metadata?.address) lines.push(`🏠 Morada: ${booking.metadata.address}`);
 
-  lines.push(``, `🔗 cal.eu/booking/${booking.id}`);
+  lines.push(``, `🔗 cal.com/booking/${booking.id}`);
   return sendToAdmin(lines);
 }
 
@@ -68,7 +68,7 @@ async function notifyReschedule(booking, oldStart) {
     `De: ${oldDate}`,
     `Para: ${newDate}`,
     ``,
-    `🔗 cal.eu/booking/${booking.id}`
+    `🔗 cal.com/booking/${booking.id}`
   ];
   return sendToAdmin(lines);
 }
@@ -81,8 +81,17 @@ async function notifyCancel(uid, { name, phone, reason }) {
   if (name)   lines.push(`👤 ${name}`);
   if (phone)  lines.push(`📱 ${phone}`);
   if (reason) lines.push(`📝 Motivo: ${reason}`);
-  lines.push(``, `🔗 cal.eu/booking/${uid}`);
+  lines.push(``, `🔗 cal.com/booking/${uid}`);
   return sendToAdmin(lines);
 }
 
-module.exports = { notifyBooking, notifyCancel, notifyReschedule, sendToAdmin };
+async function notifyOtp(action, code) {
+  return sendToAdmin([
+    `🔐 *OTP Nexus*`,
+    `Acção: ${action}`,
+    `Código: \`${code}\``,
+    `Válido 5 minutos.`
+  ]);
+}
+
+module.exports = { notifyBooking, notifyCancel, notifyReschedule, sendToAdmin, notifyOtp };

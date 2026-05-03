@@ -1,23 +1,40 @@
 # SerenBot
 
-> OpenClaw-powered booking assistant for wellness & service businesses.  
-> Telegram + WhatsApp · Cloudflare Tunnels · Cal.eu · Kommo CRM
+> Bot de agendamento autónomo para a clínica Tratamentes.  
+> Telegram · Cal.com · Kommo CRM · Cloudflare Tunnels
 
 ---
 
-## What is this?
+## O que é
 
-SerenBot is a setup wizard that installs and configures an AI booking assistant on your VPS in minutes.
+SerenBot é uma API Node.js com dois papéis:
 
-Built on [OpenClaw](https://openclaw.ai), it deploys one or two AI agents (e.g. a customer-facing bot and an admin bot) with:
+1. **Seren Lite** — bot Telegram nativo (state machine + keywords). Recebe mensagens de clientes via webhook, classifica intenção, gere o fluxo de conversa e agenda directamente no Cal.com. **Sem LLM por mensagem** — rápido e de custo zero por interacção.
+2. **Backend API** — endpoints HTTP para Cal.com, Kommo CRM, notificações admin e administração.
 
-- **Zero open ports** — everything runs through Cloudflare Tunnels
-- **Telegram + WhatsApp** support via OpenClaw connectors
-- **Secure credentials** — `.env` with `chmod 600`, outside the web root, never committed
-- **systemd services** — auto-restart on failure
-- **Resumable install** — interrupt and continue where you left off
+```
+Cliente Telegram
+      │  POST /telegram/seren
+      ▼
+SerenBot API (localhost:3002)
+  src/bot/seren-handler.js   ←── state machine + keyword intent
+     │         │         │
+     ▼         ▼         ▼
+  Cal.com   Kommo CRM  Notificações
+  (agenda)  (leads)    (admin via Telegram)
+```
 
-Works alongside an existing Nginx/PHP/SQLite stack without conflicts.
+---
+
+## Stack
+
+- **Node.js 18+** / Express
+- **Cal.com v2 API** — agendamento
+- **Kommo CRM** — gestão de leads
+- **Telegram Bot API** — webhook nativo (sem gateway intermédio)
+- **OpenRouter** — Gemini Flash como fallback LLM para intenções desconhecidas
+- **Cloudflare Tunnel** — zero portas abertas no firewall
+- **Nominatim / OSM** — geocoding para serviços ao domicílio (cache SQLite)
 
 ---
 
@@ -29,48 +46,61 @@ cd serenbot
 bash scripts/setup.sh
 ```
 
-The wizard will ask for:
-1. A project name (used for folder, tunnel name, systemd services)
-2. Agent names and whether sandbox is ON or OFF per agent
-3. API tokens one by one (hidden input)
-4. WhatsApp mode (OpenClaw CLI or external service)
+O wizard interactivo configura:
+1. `.env` com todas as credenciais
+2. Serviço systemd `serenbot-api`
+3. Cloudflare Tunnel (se aplicável)
+4. Webhook Telegram
 
-To install only one agent:
-```bash
-bash scripts/setup.sh --only agent1
+---
+
+## Requisitos
+
+- Ubuntu 22.04+ ou Debian 12+
+- Node.js 18+ (`engines.node` definido em `package.json`)
+- 512 MB RAM (1 GB recomendado)
+- Domínio no Cloudflare (para o tunnel)
+
+Integrações opcionais: Cal.com, Kommo CRM.
+
+---
+
+## Arquitectura de ficheiros
+
+```
+src/
+  api.js                  ← Express app, todos os endpoints
+  bot/
+    seren-handler.js      ← state machine principal (14 estados)
+    intent.js             ← classificador de intenções por keywords
+    session.js            ← sessões em memória (TTL 30min)
+    ab-responses.js       ← variantes A/B/C de respostas
+    followup.js           ← follow-ups automáticos (60min/23h/24h)
+    llm-fallback.js       ← fallback Gemini Flash (intenções desconhecidas)
+  infra/
+    calcom.js             ← Cal.com v2 API
+    calcom-catalog.js     ← catálogo dinâmico de slugs
+    kommo.js              ← Kommo CRM
+    notify.js             ← notificações Telegram ao admin
+    webhook.js            ← webhooks Cal.com
+  core/
+    slots.js              ← algoritmo de selecção de slots
+    domicilio.js          ← preços ao domicílio por zona
+    models.js             ← UnifiedBooking (normaliza Cal.com)
+  cache/
+    geocache.js           ← cache SQLite (TTL 90 dias)
+
+data/
+  sources.json            ← serviços, durações, slugs Cal.com (editável)
+  intents.json            ← padrões de intenção (editável sem restart)
+  responses.json          ← textos de resposta com variantes (editável sem restart)
 ```
 
 ---
 
-## Requirements
+## Documentação
 
-- Ubuntu 22.04+ or Debian 12+
-- 1 GB RAM, 10 GB disk
-- SSH access (root or sudo)
-- A domain on Cloudflare (for the tunnel)
-- Anthropic API key
-
-Optional integrations: Cal.eu, Kommo CRM.
-
----
-
-## Architecture
-
-```
-Internet
-   │
-Cloudflare Tunnel
-   ├──► bots.your-domain.com  →  localhost:18789  (OpenClaw Gateway)
-   └──► api.your-domain.com   →  localhost:3001   (Node.js API)
-```
-
-No ports are exposed publicly. Cloudflare handles TLS end-to-end.
-
----
-
-## Documentation
-
-See [`docs/INSTALL.md`](docs/INSTALL.md) for the full step-by-step guide, manual installation, troubleshooting, and security notes.
+Ver [`docs/INSTALL.md`](docs/INSTALL.md) para guia de instalação, configuração manual e troubleshooting.
 
 ---
 

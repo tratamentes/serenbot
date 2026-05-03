@@ -2,12 +2,12 @@
  * Configuração de preços e zonas para serviços ao domicílio.
  * 
  * Base: Rua Jorge Colaço 32A, 1700-253 Lisboa
- * Suplemento por zona (ida e volta):
- *   Até 5km  → +5€
- *   Até 10km → +10€
- *   Até 15km → +15€
- *   Até 20km → +20€
- *   Até 25km → +25€
+ * Taxa de deslocação por zona (confirmado 2026-05-01 via tratamentes.pt/localizacoes/):
+ *   Até 5km  → +15€
+ *   Até 10km → +20€
+ *   Até 15km → +25€
+ *   Até 20km → +30€
+ *   Até 25km → +35€
  *   Mais de 25km → Não disponível
  */
 
@@ -19,8 +19,7 @@ const ZONES = {
   RADIUS_25KM: 25,
 };
 
-// Taxa de deslocação mínima: 15 € (confirmado cal.com 2026-04-29)
-// Valores para zonas >5km: estimativas — confirmar com Paulo
+// Taxa de deslocação: confirmado via tratamentes.pt/localizacoes/ em 2026-05-01
 const SURCHARGES = {
   5:  15,
   10: 20,

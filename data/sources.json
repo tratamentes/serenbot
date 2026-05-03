@@ -1,0 +1,54 @@
+{
+  "terapeutica": {
+    "label":      "Massagem Terapêutica",
+    "painDesire": "alívio de dores e tensões musculares",
+    "durations": [
+      { "min": 90, "label": "90min — 70€", "note": "recomendado", "slugLisboa": "massagem-terapeutica-90-min-lisboa", "slugCascais": "massagem-terapeutica-90-min-cascais", "slugDomicilio": "massagem-terapeutica-90-min-domicilio" },
+      { "min": 60, "label": "60min — 50€", "slugLisboa": "massagem-de-relaxamento-60-min-lisboa", "slugCascais": "massagem-de-relaxamento-60-min-cascais", "slugDomicilio": "massagem-de-relaxamento-60-min-domicilio" },
+      { "min": 30, "label": "30min — 35€", "slugLisboa": "sessao-express-30-min-lisboa", "slugCascais": "sessao-express-30-min-cascais", "slugDomicilio": null }
+    ]
+  },
+  "relaxamento": {
+    "label":      "Massagem de Relaxamento",
+    "painDesire": "relaxamento profundo e alívio de tensões",
+    "durations": [
+      { "min": 60, "label": "60min — 50€", "note": "recomendado", "slugLisboa": "massagem-de-relaxamento-60-min-lisboa", "slugCascais": "massagem-de-relaxamento-60-min-cascais", "slugDomicilio": "massagem-de-relaxamento-60-min-domicilio" },
+      { "min": 90, "label": "90min — 70€", "slugLisboa": "massagem-terapeutica-90-min-lisboa", "slugCascais": "massagem-terapeutica-90-min-cascais", "slugDomicilio": "massagem-terapeutica-90-min-domicilio" },
+      { "min": 30, "label": "30min — 35€", "slugLisboa": "sessao-express-30-min-lisboa", "slugCascais": "sessao-express-30-min-cascais", "slugDomicilio": null }
+    ]
+  },
+  "lomi": {
+    "label":      "Massagem Lomi-Lomi",
+    "painDesire": "bem-estar profundo e equilíbrio corpo-mente",
+    "bookingNote": "Técnica Lomi-Lomi",
+    "durations": [
+      { "min": 60, "label": "60min — 50€", "note": "recomendado", "slugLisboa": "massagem-de-relaxamento-60-min-lisboa", "slugCascais": "massagem-de-relaxamento-60-min-cascais", "slugDomicilio": "massagem-de-relaxamento-60-min-domicilio" },
+      { "min": 90, "label": "90min — 70€", "slugLisboa": "massagem-terapeutica-90-min-lisboa", "slugCascais": "massagem-terapeutica-90-min-cascais", "slugDomicilio": "massagem-terapeutica-90-min-domicilio" },
+      { "min": 30, "label": "30min — 35€", "slugLisboa": "sessao-express-30-min-lisboa", "slugCascais": "sessao-express-30-min-cascais", "slugDomicilio": null }
+    ]
+  },
+  "sueca": {
+    "label":      "Massagem Sueca",
+    "painDesire": "relaxamento muscular profundo e activação da circulação",
+    "bookingNote": "Técnica Sueca",
+    "durations": [
+      { "min": 60, "label": "60min — 50€", "note": "recomendado", "slugLisboa": "massagem-de-relaxamento-60-min-lisboa", "slugCascais": "massagem-de-relaxamento-60-min-cascais", "slugDomicilio": "massagem-de-relaxamento-60-min-domicilio" },
+      { "min": 90, "label": "90min — 70€", "slugLisboa": "massagem-terapeutica-90-min-lisboa", "slugCascais": "massagem-terapeutica-90-min-cascais", "slugDomicilio": "massagem-terapeutica-90-min-domicilio" },
+      { "min": 30, "label": "30min — 35€", "slugLisboa": "sessao-express-30-min-lisboa", "slugCascais": "sessao-express-30-min-cascais", "slugDomicilio": null }
+    ]
+  },
+  "visceral": {
+    "label":      "Massagem Visceral",
+    "painDesire": "equilíbrio visceral e bem-estar digestivo",
+    "durations": [
+      { "min": 60, "label": "60min — 50€", "note": "recomendado", "slugLisboa": "massagem-visceral-60-min-lisboa", "slugCascais": "massagem-visceral-60-min-cascais", "slugDomicilio": null }
+    ]
+  },
+  "quantum": {
+    "label":      "Quantum Touch",
+    "painDesire": "harmonia energética e bem-estar",
+    "durations": [
+      { "min": 60, "label": "60min — 50€", "note": "recomendado", "slugLisboa": "quantum-touch-60-min-lisboa", "slugCascais": "quantum-touch-60-min-cascais", "slugDomicilio": null }
+    ]
+  }
+}
