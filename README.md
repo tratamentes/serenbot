@@ -9,7 +9,7 @@
 
 SerenBot é uma API Node.js com dois papéis:
 
-1. **Seren Lite** — bot Telegram nativo (state machine + keywords). Recebe mensagens de clientes via webhook, classifica intenção, gere o fluxo de conversa e agenda directamente no Cal.com. **Sem LLM por mensagem** — rápido e de custo zero por interacção.
+1. **Seren Lite** — bot Telegram nativo (state machine + keywords). Recebe mensagens de clientes via webhook, classifica intenção, gere o fluxo de conversa e agenda directamente no Cal.com. **Sem LLM a responder ao cliente** — opcionalmente usa um modelo barato só para classificar mensagens ambíguas em JSON interno.
 2. **Backend API** — endpoints HTTP para Cal.com, Kommo CRM, notificações admin e administração.
 
 ```
@@ -32,7 +32,7 @@ SerenBot API (localhost:3002)
 - **Cal.com v2 API** — agendamento
 - **Kommo CRM** — gestão de leads
 - **Telegram Bot API** — webhook nativo (sem gateway intermédio)
-- **OpenRouter** — Gemini Flash como fallback LLM para intenções desconhecidas
+- **OpenRouter** — opcional, Gemini Flash Lite apenas como classificador auxiliar de intenção
 - **Cloudflare Tunnel** — zero portas abertas no firewall
 - **Nominatim / OSM** — geocoding para serviços ao domicílio (cache SQLite)
 
@@ -73,10 +73,11 @@ src/
   bot/
     seren-handler.js      ← state machine principal (14 estados)
     intent.js             ← classificador de intenções por keywords
+    intent-analyzer.js    ← combina regras locais + LLM opcional em JSON
     session.js            ← sessões em memória (TTL 30min)
     ab-responses.js       ← variantes A/B/C de respostas
     followup.js           ← follow-ups automáticos (60min/23h/24h)
-    llm-fallback.js       ← fallback Gemini Flash (intenções desconhecidas)
+    llm-fallback.js       ← compatibilidade; não chama LLM nem gera respostas
   infra/
     calcom.js             ← Cal.com v2 API
     calcom-catalog.js     ← catálogo dinâmico de slugs

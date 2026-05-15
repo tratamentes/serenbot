@@ -20,7 +20,7 @@
 | Telegram Admin ID | Enviar msg a @userinfobot |
 | Cal.com API Key | cal.com → Settings → API Keys |
 | Kommo Access Token | joaogoulart.kommo.com → Integrações → API |
-| OpenRouter API Key | openrouter.ai → Keys |
+| OpenRouter API Key | openrouter.ai → Keys ou BYOK; opcional para classificar mensagens ambíguas |
 | Cloudflare Account ID + API Token | dash.cloudflare.com |
 
 ---
@@ -71,7 +71,13 @@ Campos obrigatórios mínimos para arrancar:
 - `CALCOM_API_KEY` + `CALCOM_USERNAME`
 - `KOMMO_SUBDOMAIN` + `KOMMO_ACCESS_TOKEN` + IDs de pipeline/status
 - `API_TOKEN` + `WEBHOOK_SECRET` — gerar com `openssl rand -hex 32`
-- `OPENROUTER_API_KEY`
+- `OPENROUTER_API_KEY` é opcional. Se preencheres, só é usado quando `LLM_INTENT_ENABLED=true`.
+
+Configuração recomendada para LLM auxiliar:
+- `LLM_INTENT_ENABLED=false` em produção até validares o fluxo
+- `LLM_INTENT_MODEL=google/gemini-2.5-flash-lite`
+- `LLM_INTENT_MONTHLY_BUDGET_EUR=5`
+- `LLM_INTENT_MONTHLY_HARD_LIMIT_EUR=15`
 
 ### 4 — Criar serviço systemd
 

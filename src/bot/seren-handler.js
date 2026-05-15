@@ -1,11 +1,12 @@
 const { createClient } = require('../utils/http');
 const { normalizePhone } = require('../utils/phone');
 const { utcToLisbon } = require('../utils/time');
-const { classifyIntent, classifySource } = require('./intent');
+const { classifySource } = require('./intent');
+const { analyzeIntent, DEFAULT_REPLY } = require('./intent-analyzer');
 const { getSession } = require('./session');
 const { pickVariant, fillTemplate, recordContinued } = require('./ab-responses');
-const { llmFallback } = require('./llm-fallback');
 const { scheduleFollowUps, cancelFollowUps } = require('./followup');
+const { logInbound, logOutbound } = require('./conversation-log');
 
 const http     = createClient('https://api.telegram.org');
 const CAL_BASE = 'https://cal.com/joao-goulart-tratamentes-lisboa-cascais';
@@ -18,6 +19,7 @@ const localApi = createClient(`http://127.0.0.1:${PORT}`);
 
 async function send(chatId, text) {
   const token = process.env.TELEGRAM_TOKEN_AGENT1;
+  logOutbound({ chatId, text, state: getSession(chatId).state });
   await http.post(`/bot${token}/sendMessage`, {
     chat_id: chatId, text, parse_mode: 'Markdown',
   }).catch(() => {});
@@ -41,6 +43,50 @@ function detectDurationByIndex(text, sourceKey) {
   if (s.includes('90') || s.includes('hora e meia')) return 90;
   if (s.includes('60') || s.includes('uma hora') || s.includes('1 hora') || s.includes('1h')) return 60;
   return null;
+}
+
+function normalizeName(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function namesCompatible(a, b) {
+  const aa = normalizeName(a).split(' ').filter(Boolean);
+  const bb = normalizeName(b).split(' ').filter(Boolean);
+  if (!aa.length || !bb.length) return false;
+  const shared = aa.filter(part => part.length > 2 && bb.includes(part));
+  return shared.length > 0 || normalizeName(a) === normalizeName(b);
+}
+
+function isOtherPerson(text) {
+  return /outra pessoa|outra|outro|algu[eé]m|presente|voucher|oferta|para a minha|para o meu|para minha|para meu/i.test(text);
+}
+
+function isAboutQuestion(text) {
+  return /quem (e|é|sao|são|es|és)|quem sao voces|quem são vocês|quem es|quem és|sobre voces|sobre vocês|sobre a tratamentes|saber mais sobre voces|saber mais sobre vocês|nao souber mais sobre voces|não souber mais sobre vocês|não souber mais sobre voces|sinal de que|sinal de quê/i.test(text);
+}
+
+function isStopCurrentFlow(text) {
+  return /desisto|nao quero marcar|não quero marcar|nao quero reserva|não quero reserva|nao quero agendar|não quero agendar|nao quero nada|não quero nada|paro por aqui|deixa estar|esquece/i.test(text);
+}
+
+function isBookingFlowState(state) {
+  return [
+    'AWAITING_LOCATION',
+    'AWAITING_DURATION',
+    'CONFIRMING_SELF',
+    'COLLECTING_PHONE',
+    'CONFIRMING_CONTACT',
+    'COLLECTING_NAME',
+    'COLLECTING_EMAIL',
+    'SELECTING_DATE',
+    'SELECTING_TIME',
+  ].includes(state);
 }
 
 function durationOptions(sourceKey) {
@@ -128,6 +174,21 @@ async function createBookingInternal({ date, time, name, email, phone, duration,
   return data;
 }
 
+async function beginContactCollection(chatId, session, vars) {
+  if (!session.bookingForOther && session.telegramId) {
+    const client = await lookupClient(session.telegramId, null);
+    if (client?.found) {
+      session.existingClient = client;
+      session.state = 'CONFIRMING_SELF';
+      await send(chatId, fillTemplate(pickVariant('ask_self_or_other', session), vars));
+      return;
+    }
+  }
+
+  session.state = 'COLLECTING_PHONE';
+  await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+}
+
 // ── SELECÇÃO DE DATAS ─────────────────────────────────────────────────────────
 
 async function findAvailableDates(session) {
@@ -148,6 +209,7 @@ async function findAvailableDates(session) {
 
 async function handleUpdate(chatId, from, text) {
   const session = getSession(chatId);
+  const stateBefore = session.state;
   const isFirstMessage = session.state === 'NEW';
 
   session.name      = session.name || from?.first_name || '';
@@ -179,36 +241,56 @@ async function handleUpdate(chatId, from, text) {
       const reply = pickVariant(`greeting_${param}`, session) || pickVariant('greeting_generic', session);
       await send(chatId, fillTemplate(reply, vars));
       scheduleFollowUps(chatId, session.name, sources[param].painDesire);
+      logInbound({ chatId, from, text, stateBefore, stateAfter: session.state, analysis: { intent: 'start', source: param, method: 'deeplink', confidence: 1 } });
     } else {
       session.state = 'QUALIFYING';
       await send(chatId, fillTemplate(pickVariant('qualifying_question', session), vars));
       scheduleFollowUps(chatId, session.name, null);
+      logInbound({ chatId, from, text, stateBefore, stateAfter: session.state, analysis: { intent: 'start', source: null, method: 'deeplink', confidence: 1 } });
     }
     return;
   }
 
-  const intent = classifyIntent(text);
+  const analysis = await analyzeIntent(text, session);
+  const intent = analysis.intent;
+  let logged = false;
+  const finish = () => {
+    if (logged) return;
+    logged = true;
+    logInbound({ chatId, from, text, stateBefore, stateAfter: session.state, analysis });
+  };
+
+  try {
 
   // ── CONTEÚDO INAPROPRIADO — responde sempre, independentemente do estado ──
   if (intent === 'inappropriate') {
     await send(chatId, fillTemplate(pickVariant('inappropriate', session), vars));
+    finish();
     return;
   }
 
   // ── INTENTS TRANSVERSAIS — respondem independentemente do estado ──────────
   // (cancel, location, hours: o utilizador pode perguntar a qualquer momento)
   if (session.state !== 'CONFIRMING_BOOKING') {
+    if (isAboutQuestion(text)) {
+      await send(chatId, fillTemplate(pickVariant('about_tratamentes', session), vars));
+      finish();
+      return;
+    }
     if (intent === 'cancel') {
       await send(chatId, fillTemplate(pickVariant('cancel_info', session), vars));
       session.state = 'CANCEL_LOOKUP';
+      finish();
       return;
     }
     if (intent === 'location' && session.state !== 'AWAITING_LOCATION') {
       await send(chatId, fillTemplate(pickVariant('location_info', session), vars));
+      finish();
       return;
     }
     if (intent === 'hours') {
       await send(chatId, fillTemplate(pickVariant('hours_info', session), vars));
+      finish();
       return;
     }
   }
@@ -217,7 +299,8 @@ async function handleUpdate(chatId, from, text) {
   if (session.state === 'CANCEL_LOOKUP') {
     const phone = normalizePhone(text.trim());
     if (!phone || phone.length < 9) {
-      await send(chatId, 'Qual é o teu número de telemóvel? (ex: 912 345 678)');
+      await send(chatId, 'Qual é o número de telemóvel, por favor? (ex: 912 345 678)');
+      finish();
       return;
     }
     // Tentar obter email do Kommo para melhorar o lookup (bookings por vezes só têm email)
@@ -228,8 +311,9 @@ async function handleUpdate(chatId, from, text) {
     } catch {}
     const bookings = await lookupBookings(phone, email);
     if (!bookings.length) {
-      await send(chatId, 'Não encontrei reservas futuras para esse número. Podes encontrar o link de cancelamento no email de confirmação que recebeste quando marcaste.');
+      await send(chatId, 'Não encontrei reservas futuras para esse número. Pode encontrar o link de cancelamento no email de confirmação recebido no momento da marcação.');
       session.state = 'QUALIFIED';
+      finish();
       return;
     }
     bookings.sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -237,17 +321,36 @@ async function handleUpdate(chatId, from, text) {
     const dt   = next.start ? utcToLisbon(next.start) : null;
     const quando = dt ? `${formatDate(dt.date)} às ${dt.time}` : '—';
     const extra  = bookings.length > 1
-      ? `\n_(tens mais ${bookings.length - 1} reserva${bookings.length > 2 ? 's' : ''} — diz-me se é outra)_`
+      ? `\n_(há mais ${bookings.length - 1} reserva${bookings.length > 2 ? 's' : ''} associada${bookings.length > 2 ? 's' : ''} — indique por favor se pretende outra)_`
       : '';
-    await send(chatId, `A tua próxima reserva é:\n\n*${quando}*\n\n🔗 https://cal.com/booking/${next.uid}?cancel=true\n\nUsa o link para cancelar ou reagendar.${extra}`);
+    await send(chatId, `A próxima reserva é:\n\n*${quando}*\n\n🔗 https://cal.com/booking/${next.uid}?cancel=true\n\nUse o link para cancelar ou reagendar.${extra}`);
     session.state = 'QUALIFIED';
+    finish();
     return;
   }
 
   // ── BOOKED — após reserva, retomar contexto normal ────────────────────────
   if (session.state === 'BOOKED') {
     session.state = 'QUALIFIED';
+    session.source = null;
+    session.lastQuestion = null;
     // cai para o routing de intent abaixo
+  }
+
+  // ── INTERRUPÇÕES DO FLUXO DE MARCAÇÃO ────────────────────────────────────
+  if (isBookingFlowState(session.state)) {
+    if (isStopCurrentFlow(text)) {
+      session.state = 'QUALIFIED';
+      session.lastQuestion = null;
+      await send(chatId, fillTemplate(pickVariant('flow_paused', session), vars));
+      return;
+    }
+    if (isAboutQuestion(text)) {
+      session.state = 'QUALIFIED';
+      session.lastQuestion = null;
+      await send(chatId, fillTemplate(pickVariant('about_tratamentes', session), vars));
+      return;
+    }
   }
 
 
@@ -264,7 +367,7 @@ async function handleUpdate(chatId, from, text) {
       scheduleFollowUps(chatId, session.name, null);
       return;
     }
-    const src = classifySource(text);
+    const src = classifySource(text) || (analysis.confidence >= 0.7 ? analysis.source : null);
     if (src) {
       session.source       = src;
       session.state        = 'QUALIFIED';
@@ -288,7 +391,7 @@ async function handleUpdate(chatId, from, text) {
     }
     // QUALIFYING sem source match e intent conhecido — cai para handlers de intent
     if (intent === 'unknown') {
-      await send(chatId, 'Desculpa, não percebi bem 😊 Podes escolher uma das opções (1 a 5) ou descrever o que procuras?');
+      await send(chatId, 'Peço desculpa, não percebi bem 😊 Pode escolher uma das opções (1 a 5) ou descrever o que procura?');
       return;
     }
   }
@@ -301,8 +404,7 @@ async function handleUpdate(chatId, from, text) {
     const src = sources[session.source];
     if (!src?.durations || src.durations.length === 1) {
       session.duration = src?.durations?.[0]?.min || 60;
-      session.state    = 'COLLECTING_PHONE';
-      await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+      await beginContactCollection(chatId, session, vars);
     } else {
       session.state = 'AWAITING_DURATION';
       await send(chatId, fillTemplate(pickVariant('ask_duration', session), { ...vars, opcoes: durationOptions(session.source) }));
@@ -313,10 +415,32 @@ async function handleUpdate(chatId, from, text) {
   // ── AWAITING_DURATION ─────────────────────────────────────────────────────
   if (session.state === 'AWAITING_DURATION') {
     const min = detectDurationByIndex(text, session.source);
-    if (!min) { await send(chatId, `Podes escolher um número?\n\n${durationOptions(session.source)}`); return; }
+    if (!min) { await send(chatId, `Pode escolher um número, por favor?\n\n${durationOptions(session.source)}`); return; }
     session.duration = min;
-    session.state    = 'COLLECTING_PHONE';
-    await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+    await beginContactCollection(chatId, session, vars);
+    return;
+  }
+
+  // ── CONFIRMING_SELF ───────────────────────────────────────────────────────
+  if (session.state === 'CONFIRMING_SELF') {
+    if (isOtherPerson(text) || isNo(text)) {
+      session.bookingForOther = true;
+      session.reuseExistingContact = false;
+      session.name = null;
+      session.phone = null;
+      session.email = null;
+      session.state = 'COLLECTING_NAME';
+      await send(chatId, fillTemplate(pickVariant('ask_name_other', session), vars));
+      return;
+    }
+    if (intent === 'affirmative' || isYes(text) || /para mim|sou eu|pr[oó]prio|pr[oó]pria/i.test(text)) {
+      session.bookingForOther = false;
+      session.reuseExistingContact = true;
+      session.state = 'COLLECTING_NAME';
+      await send(chatId, fillTemplate(pickVariant('ask_name', session), vars));
+      return;
+    }
+    await send(chatId, fillTemplate(pickVariant('ask_self_or_other', session), vars));
     return;
   }
 
@@ -329,16 +453,15 @@ async function handleUpdate(chatId, from, text) {
     }
     session.phone = phone;
 
-    const client = await lookupClient(session.telegramId, phone);
-    if (client?.found && client.name) {
-      session.name     = client.name;
-      session.email    = client.email || null;
-      session.state    = 'CONFIRMING_CONTACT';
-      session.lastQuestion = 'confirm_contact';
-      await send(chatId, fillTemplate(pickVariant('confirm_contact', session), {
-        ...vars, nome: client.name, email: client.email || 'sem email registado',
-      }));
+    if (session.name) {
+      session.state = 'COLLECTING_EMAIL';
+      await send(chatId, fillTemplate(pickVariant('ask_email', session), vars));
     } else {
+      const client = session.bookingForOther ? null : await lookupClient(null, phone);
+      if (client?.found) {
+        session.existingClient = client;
+        session.reuseExistingContact = true;
+      }
       session.state = 'COLLECTING_NAME';
       await send(chatId, fillTemplate(pickVariant('ask_name', session), vars));
     }
@@ -359,8 +482,31 @@ async function handleUpdate(chatId, from, text) {
 
   // ── COLLECTING_NAME ───────────────────────────────────────────────────────
   if (session.state === 'COLLECTING_NAME') {
-    if (text.trim().length < 2) { await send(chatId, 'Precisas de indicar um nome válido 😊'); return; }
+    if (text.trim().length < 2) { await send(chatId, 'Indique por favor um nome válido 😊'); return; }
     session.name  = text.trim();
+
+    if (session.reuseExistingContact) {
+      const client = session.existingClient;
+      if (client?.name && namesCompatible(session.name, client.name) && client.phone) {
+        session.phone = normalizePhone(client.phone);
+        session.email = client.email || null;
+        session.reuseExistingContact = false;
+        await startDateSelection(chatId, session);
+        return;
+      }
+
+      session.reuseExistingContact = false;
+      session.state = 'COLLECTING_PHONE';
+      await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+      return;
+    }
+
+    if (session.bookingForOther) {
+      session.state = 'COLLECTING_PHONE';
+      await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+      return;
+    }
+
     session.state = 'COLLECTING_EMAIL';
     await send(chatId, fillTemplate(pickVariant('ask_email', session), vars));
     return;
@@ -371,7 +517,7 @@ async function handleUpdate(chatId, from, text) {
     const skip = /sem email|nao|não|saltar|skip/i.test(text);
     session.email = skip ? null : (text.includes('@') ? text.trim() : null);
     if (!skip && !session.email) {
-      await send(chatId, 'Esse email não parece válido. Podes indicar um email correcto ou dizer «sem email».');
+      await send(chatId, 'Esse email não parece válido. Pode indicar um email correcto ou responder «sem email».');
       return;
     }
     await startDateSelection(chatId, session);
@@ -442,13 +588,19 @@ async function handleUpdate(chatId, from, text) {
   // Recusa explícita após uma pergunta de booking → não avançar para localização
   if (isNo(text) && session.lastQuestion === 'booking') {
     session.lastQuestion = null;
-    await send(chatId, 'Sem problema! Posso ajudar com outra coisa? 😊');
+    await send(chatId, 'Sem problema! Posso ajudar com mais alguma coisa? 😊');
     return;
   }
 
-  const wantsBooking = intent === 'booking'
+  // Recusa genérica sem contexto pendente → despedida
+  if (isNo(text)) {
+    await send(chatId, pickVariant('farewell', session));
+    return;
+  }
+
+  const wantsBooking = !isStopCurrentFlow(text) && (intent === 'booking'
     || (intent === 'affirmative' && session.lastQuestion === 'booking')
-    || (intent === 'unknown' && session.lastQuestion === 'booking' && text.trim().length < 20);
+    || (intent === 'unknown' && session.lastQuestion === 'booking' && text.trim().length < 20));
 
   if (wantsBooking) {
     const city = detectCity(text);
@@ -457,8 +609,7 @@ async function handleUpdate(chatId, from, text) {
       const src = sources[session.source];
       if (!src?.durations || src.durations.length === 1) {
         session.duration = src?.durations?.[0]?.min || 60;
-        session.state    = 'COLLECTING_PHONE';
-        await send(chatId, fillTemplate(pickVariant('ask_phone', session), vars));
+        await beginContactCollection(chatId, session, vars);
       } else {
         session.state = 'AWAITING_DURATION';
         await send(chatId, fillTemplate(pickVariant('ask_duration', session), { ...vars, opcoes: durationOptions(session.source) }));
@@ -471,7 +622,7 @@ async function handleUpdate(chatId, from, text) {
   }
 
   if (intent === 'services') {
-    const detectedSrc = classifySource(text) || session.source;
+    const detectedSrc = classifySource(text) || (analysis.confidence >= 0.7 ? analysis.source : null) || session.source;
     const infoKey = detectedSrc ? `service_info_${detectedSrc}` : 'service_info_generic';
     if (detectedSrc) session.source = detectedSrc;
     const reply   = pickVariant(infoKey, session) || pickVariant('service_info_generic', session);
@@ -503,9 +654,10 @@ async function handleUpdate(chatId, from, text) {
     return;
   }
 
-  // Fallback LLM
-  const reply = await llmFallback(text);
-  await send(chatId, reply);
+  await send(chatId, DEFAULT_REPLY);
+  } finally {
+    finish();
+  }
 }
 
 // ── HELPERS DE FLUXO ─────────────────────────────────────────────────────────

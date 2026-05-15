@@ -8,7 +8,7 @@
 ## O que é isto
 
 SerenBot é uma API Node.js com dois papéis:
-1. **Seren Lite** — bot Telegram nativo. Recebe mensagens de clientes via webhook, classifica intenção com keywords, gere estado da conversa, agenda via Cal.com. Sem LLM por mensagem — só usa Gemini Flash como fallback para intenções desconhecidas.
+1. **Seren Lite** — bot Telegram nativo. Recebe mensagens de clientes via webhook, classifica intenção com keywords, gere estado da conversa, agenda via Cal.com. A LLM nunca responde directamente ao cliente; se activada, só classifica mensagens ambíguas em JSON interno.
 2. **Backend API** — expõe endpoints HTTP para Cal.com, Kommo CRM, notificações e admin.
 
 ---
@@ -48,10 +48,11 @@ Telegram (João — OTP login clinica)
 | `src/api.js` | Express app, todos os endpoints, ponto de entrada |
 | `src/bot/seren-handler.js` | State machine principal — recebe updates, gere estados |
 | `src/bot/intent.js` | Classificador de intenções por keywords + classifySource |
+| `src/bot/intent-analyzer.js` | Combina scoring local + OpenRouter opcional para intenção/sentimento/risco em JSON |
 | `src/bot/session.js` | Sessões em memória, TTL 30min |
 | `src/bot/ab-responses.js` | Round-robin A/B/C, stats persistidas em data/ab-stats.json |
 | `src/bot/followup.js` | Fila de follow-ups (60min, 23h, 24h), persistida em data/followup-queue.json |
-| `src/bot/llm-fallback.js` | Fallback LLM (OpenRouter Gemini Flash) para intenções desconhecidas |
+| `src/bot/llm-fallback.js` | Compatibilidade antiga; devolve resposta local fixa, sem chamada LLM |
 | `src/infra/calcom.js` | Cal.com v2 API — slots, reservas, cancelamentos |
 | `src/infra/calcom-catalog.js` | Catálogo dinâmico de slugs Cal.com |
 | `src/infra/kommo.js` | Kommo CRM — contacts, leads, pipeline moves |
@@ -192,7 +193,11 @@ Ficheiro: `/opt/serenbot/.env` (chmod 600, root:root)
 | `CALCOM_API_KEY` | `cal_live_...` |
 | `CALCOM_USERNAME` | `joao-goulart-tratamentes-lisboa-cascais` |
 | `CALCOM_TIMEZONE` | `Europe/Lisbon` |
-| `OPENROUTER_API_KEY` | LLM fallback Seren (Gemini Flash) |
+| `OPENROUTER_API_KEY` | Opcional; OpenRouter/BYOK para classificação auxiliar de intenção |
+| `LLM_INTENT_ENABLED` | `false` por defeito; activar só se quiser usar LLM como classificador |
+| `LLM_INTENT_MODEL` | `google/gemini-2.5-flash-lite` |
+| `LLM_INTENT_MONTHLY_BUDGET_EUR` | orçamento alvo, recomendado `5` |
+| `LLM_INTENT_MONTHLY_HARD_LIMIT_EUR` | hard cap operacional, recomendado `15` |
 | `API_TOKEN` | protege endpoints SerenBot |
 | `WEBHOOK_SECRET` | HMAC para webhooks Cal.com |
 
@@ -254,7 +259,7 @@ sudo systemctl restart serenbot-api
 | Bot notificações admin | ✅ Activo | notify.js → TELEGRAM_BOT_B_TOKEN → João |
 | clinicatmotp_bot | ✅ Activo | OTP login clinica.tratamentes.pt |
 | Geocoding | ✅ Nominatim | Cache SQLite em data/geocache.db |
-| OpenRouter | ✅ Gemini Flash (LLM fallback Seren) | llm-fallback.js |
+| OpenRouter | ⚙️ Opcional, Gemini Flash Lite como classificador JSON | intent-analyzer.js |
 | Cloudflare Tunnel (api.tratamentes.pt) | ✅ Activo | localhost:3002 |
 
 ---

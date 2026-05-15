@@ -6,5 +6,7 @@
 src/graphify-out/
 node_modules/
 data/geocache.db
+data/conversations/
+data/llm-usage.json
 cal.com_slugs.txt
 cal.com_slugs.txt.save

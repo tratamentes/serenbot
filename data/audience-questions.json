@@ -1,0 +1,142 @@
+{
+  "_note": "Linguagem real de clientes recolhida em pesquisa. Usado antes da LLM para melhorar intenção, serviço provável, emoção e etapa do funil.",
+  "entries": [
+    {
+      "patterns": [
+        "dor nas costas",
+        "dor lombar",
+        "lombar insuportavel",
+        "costas presas",
+        "costas bloqueadas",
+        "dor nas costas do trabalho",
+        "dor nas costas depois de estar sentado",
+        "preciso de uma massagem nas costas"
+      ],
+      "intent": "services",
+      "source": "terapeutica",
+      "emotion": "pain_concern",
+      "stage": "problem_aware",
+      "reply_key": "service_info_terapeutica",
+      "booking_bias": true
+    },
+    {
+      "patterns": [
+        "pescoço preso",
+        "pescoco preso",
+        "pescoço todo preso",
+        "pescoco todo preso",
+        "dor cervical",
+        "tensao no pescoço",
+        "tensao no pescoco",
+        "dor no pescoço e ombros",
+        "dor no pescoco e ombros",
+        "trabalho ao computador"
+      ],
+      "intent": "services",
+      "source": "terapeutica",
+      "emotion": "pain_concern",
+      "stage": "problem_aware",
+      "reply_key": "service_info_terapeutica",
+      "booking_bias": true
+    },
+    {
+      "patterns": [
+        "ombros tensos",
+        "ombros pesados",
+        "ansiedade nos ombros",
+        "stress nos ombros",
+        "tensao nos ombros",
+        "dor que sobe para o pescoço",
+        "dor que sobe pro pescoco",
+        "dia longo"
+      ],
+      "intent": "services",
+      "source": "relaxamento",
+      "emotion": "stress_anxiety",
+      "stage": "problem_aware",
+      "reply_key": "service_info_relaxamento",
+      "booking_bias": true
+    },
+    {
+      "patterns": [
+        "quanto custa massagem",
+        "preço massagem",
+        "preco massagem",
+        "massagem em lisboa preço",
+        "massagem ao domicilio lisboa",
+        "massagem ao domicílio lisboa",
+        "massagem ao domicilio quanto custa"
+      ],
+      "intent": "pricing",
+      "source": null,
+      "emotion": "practical_doubt",
+      "stage": "solution_aware",
+      "reply_key": "pricing",
+      "booking_bias": false
+    },
+    {
+      "patterns": [
+        "massagem terapeutica doi",
+        "massagem terapêutica dói",
+        "massagem doi",
+        "tenho medo que doa",
+        "pressao forte",
+        "pressão forte"
+      ],
+      "intent": "services",
+      "source": "terapeutica",
+      "emotion": "fear",
+      "stage": "objection",
+      "reply_key": "service_info_terapeutica",
+      "booking_bias": false
+    },
+    {
+      "patterns": [
+        "primeira vez massagem",
+        "primeira massagem",
+        "tenho vergonha",
+        "vergonha de despir",
+        "nao sei o que esperar",
+        "não sei o que esperar"
+      ],
+      "intent": "services",
+      "source": "relaxamento",
+      "emotion": "nervousness",
+      "stage": "objection",
+      "reply_key": "service_info_relaxamento",
+      "booking_bias": false
+    },
+    {
+      "patterns": [
+        "contractura muscular",
+        "contratura muscular",
+        "no muscular",
+        "nó muscular",
+        "calor ajuda contractura",
+        "calor ajuda contratura"
+      ],
+      "intent": "services",
+      "source": "terapeutica",
+      "emotion": "pain_concern",
+      "stage": "problem_aware",
+      "reply_key": "service_info_terapeutica",
+      "booking_bias": true
+    },
+    {
+      "patterns": [
+        "stress da dor muscular",
+        "stress dá dor muscular",
+        "stress contrai musculos",
+        "stress contrai músculos",
+        "ansiedade da dor muscular",
+        "ansiedade dá dor muscular"
+      ],
+      "intent": "services",
+      "source": "relaxamento",
+      "emotion": "stress_anxiety",
+      "stage": "understanding",
+      "reply_key": "service_info_relaxamento",
+      "booking_bias": true
+    }
+  ]
+}

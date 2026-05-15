@@ -1,18 +1,18 @@
 {
   "qualifying_question": {
     "A": {
-      "shown": 7,
-      "continued": 7
+      "shown": 10,
+      "continued": 8
     }
   },
   "greeting_terapeutica": {
     "A": {
-      "shown": 5,
-      "continued": 5
+      "shown": 7,
+      "continued": 7
     },
     "B": {
-      "shown": 1,
-      "continued": 1
+      "shown": 2,
+      "continued": 2
     }
   },
   "llm": {
@@ -23,8 +23,12 @@
   },
   "ask_location": {
     "A": {
-      "shown": 4,
-      "continued": 4
+      "shown": 9,
+      "continued": 9
+    },
+    "B": {
+      "shown": 3,
+      "continued": 2
     }
   },
   "booking_link": {
@@ -35,56 +39,60 @@
   },
   "service_info_terapeutica": {
     "A": {
+      "shown": 3,
+      "continued": 3
+    },
+    "B": {
       "shown": 1,
       "continued": 1
     }
   },
   "ask_duration": {
     "A": {
-      "shown": 3,
-      "continued": 3
+      "shown": 6,
+      "continued": 6
     }
   },
   "ask_phone": {
     "A": {
-      "shown": 2,
-      "continued": 2
+      "shown": 5,
+      "continued": 5
     }
   },
   "ask_name": {
     "A": {
-      "shown": 2,
-      "continued": 2
+      "shown": 3,
+      "continued": 3
     }
   },
   "ask_email": {
     "A": {
-      "shown": 2,
-      "continued": 2
+      "shown": 5,
+      "continued": 5
     }
   },
   "ask_date": {
     "A": {
-      "shown": 2,
-      "continued": 2
+      "shown": 5,
+      "continued": 5
     }
   },
   "ask_time": {
     "A": {
-      "shown": 2,
-      "continued": 1
+      "shown": 5,
+      "continued": 4
     }
   },
   "confirm_booking": {
     "A": {
-      "shown": 1,
-      "continued": 1
+      "shown": 4,
+      "continued": 4
     }
   },
   "booking_success": {
     "A": {
-      "shown": 1,
-      "continued": 0
+      "shown": 4,
+      "continued": 2
     }
   },
   "cancel_info": {
@@ -95,8 +103,8 @@
   },
   "greeting_generic": {
     "A": {
-      "shown": 2,
-      "continued": 2
+      "shown": 4,
+      "continued": 3
     }
   },
   "service_info_generic": {
@@ -106,6 +114,30 @@
     }
   },
   "followup_1": {
+    "A": {
+      "shown": 2,
+      "continued": 2
+    }
+  },
+  "about_tratamentes": {
+    "A": {
+      "shown": 1,
+      "continued": 1
+    }
+  },
+  "service_info_lomi": {
+    "A": {
+      "shown": 1,
+      "continued": 1
+    }
+  },
+  "followup_2": {
+    "A": {
+      "shown": 1,
+      "continued": 0
+    }
+  },
+  "followup_3": {
     "A": {
       "shown": 1,
       "continued": 0

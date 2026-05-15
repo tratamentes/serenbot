@@ -183,6 +183,7 @@ async function findClientByPhone(phone) {
       id:              contact.id,
       name:            contact.name,
       phone:           normalized,
+      email:           extractFieldCode(contact, 'EMAIL'),
       lastSession:     extractCustomField(contact, 'Última Sessão'),
       service:         extractCustomField(contact, 'Serviço Preferido'),
       location:        extractCustomField(contact, 'Local Habitual'),
@@ -216,6 +217,8 @@ async function findClientByTelegramId(telegramId) {
       return {
         id:             contact.id,
         name:           contact.name,
+        phone:          extractFieldCode(contact, 'PHONE'),
+        email:          extractFieldCode(contact, 'EMAIL'),
         leadId:         activeLead?.id          || null,
         leadPipelineId: activeLead?.pipeline_id || null,
         origem:         extractCustomField(contact, 'Origem'),
@@ -576,6 +579,11 @@ function formatLeadName(name, service, duration, location, phone, bookingDate, b
 function extractCustomField(contact, fieldName) {
   const fields = contact.custom_fields_values || [];
   return fields.find(f => f.field_name === fieldName)?.values?.[0]?.value || null;
+}
+
+function extractFieldCode(contact, fieldCode) {
+  const fields = contact.custom_fields_values || [];
+  return fields.find(f => f.field_code === fieldCode)?.values?.[0]?.value || null;
 }
 
 /**

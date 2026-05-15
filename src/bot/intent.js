@@ -109,31 +109,57 @@ function matchesPattern(s, pattern) {
 }
 
 function classifyIntent(text) {
+  return classifyIntentDetailed(text).intent;
+}
+
+function classifyIntentDetailed(text) {
   const s = normalize(text);
   let best = { intent: 'unknown', score: 0 };
+  let second = { intent: 'unknown', score: 0 };
   for (const [intent, patterns] of Object.entries(PATTERNS)) {
     if (!Array.isArray(patterns)) continue;
     const score = patterns.filter(p => matchesPattern(s, p)).length;
-    if (score > best.score) best = { intent, score };
+    if (score > best.score) {
+      second = best;
+      best = { intent, score };
+    } else if (score > second.score) {
+      second = { intent, score };
+    }
   }
-  return best.intent;
+  const confidence = best.score === 0 ? 0
+    : Math.min(0.95, 0.45 + (best.score * 0.18) + Math.max(0, best.score - second.score) * 0.08);
+  return { ...best, secondIntent: second.intent, secondScore: second.score, confidence };
 }
 
 // Tenta identificar a origem/serviço a partir de texto livre (para qualificação orgânica)
 function classifySource(text) {
+  return classifySourceDetailed(text).source;
+}
+
+function classifySourceDetailed(text) {
   const s = normalize(text);
   const trimmed = s.trim();
 
   // Resposta numérica directa (1-5)
-  if (QUALIFY_DIGITS[trimmed] !== undefined) return QUALIFY_DIGITS[trimmed];
+  if (QUALIFY_DIGITS[trimmed] !== undefined) {
+    return { source: QUALIFY_DIGITS[trimmed], score: 1, confidence: QUALIFY_DIGITS[trimmed] ? 0.95 : 0 };
+  }
 
   // Score por número de keywords encontradas (como classifyIntent)
   let best = { source: null, score: 0 };
+  let second = { source: null, score: 0 };
   for (const [source, keywords] of Object.entries(SOURCE_KEYWORDS)) {
     const score = keywords.filter(kw => s.includes(normalize(kw))).length;
-    if (score > best.score) best = { source, score };
+    if (score > best.score) {
+      second = best;
+      best = { source, score };
+    } else if (score > second.score) {
+      second = { source, score };
+    }
   }
-  return best.source;
+  const confidence = best.score === 0 ? 0
+    : Math.min(0.95, 0.5 + (best.score * 0.16) + Math.max(0, best.score - second.score) * 0.08);
+  return { ...best, secondSource: second.source, secondScore: second.score, confidence };
 }
 
-module.exports = { classifyIntent, classifySource };
+module.exports = { classifyIntent, classifyIntentDetailed, classifySource, classifySourceDetailed };

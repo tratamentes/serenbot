@@ -1,221 +1,407 @@
 {
   "_note": "Editar livremente. Recarregar com POST /admin/responses/reload sem restart.",
-
   "qualifying_question": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 👋 O que te traz à Tratamentes?\n\n1️⃣ Tenho dores musculares / tensão\n2️⃣ Quero relaxar / descansar\n3️⃣ Interesse em Lomi-Lomi\n4️⃣ Interesse em Massagem Sueca\n5️⃣ Outra razão" },
-      { "id": "B", "text": "Olá, {nome}! 🌿 Para te ajudar melhor, diz-me o que procuras:\n\n1️⃣ Aliviar dores e tensão muscular\n2️⃣ Relaxamento e descanso\n3️⃣ Massagem Lomi-Lomi\n4️⃣ Massagem Sueca\n5️⃣ Outra coisa" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 👋 O que procura na Tratamentes?\n\n1️⃣ Dores musculares / tensão\n2️⃣ Relaxamento / descanso\n3️⃣ Interesse em Lomi-Lomi\n4️⃣ Interesse em Massagem Sueca\n5️⃣ Outra razão"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! 🌿 Para ajudar melhor, indique por favor o que procura:\n\n1️⃣ Aliviar dores e tensão muscular\n2️⃣ Relaxamento e descanso\n3️⃣ Massagem Lomi-Lomi\n4️⃣ Massagem Sueca\n5️⃣ Outra coisa"
+      }
     ]
   },
-
   "greeting_terapeutica": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 👋 Vieste à procura de alívio para dores musculares? Estás no sítio certo — é a nossa especialidade. Queres saber mais ou preferes já ver disponibilidade?" },
-      { "id": "B", "text": "Olá, {nome}! 🙌 Dores musculares são a queixa mais comum que resolvemos. Posso mostrar-te como funciona a sessão ou ajudar a marcar directamente — o que preferes?" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 👋 Procura alívio para dores musculares? Está no sítio certo — é uma das nossas especialidades. Gostaria de saber como funciona ou prefere ver disponibilidade?"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! 🙌 As dores musculares são uma das queixas mais comuns que acompanhamos. Posso explicar a sessão ou ajudar a marcar directamente — como prefere avançar?"
+      }
     ]
   },
-
   "greeting_relaxamento": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 🌿 Um momento de relaxamento faz mesmo falta. Queres ver a disponibilidade para esta semana?" },
-      { "id": "B", "text": "Olá, {nome}! Bem-vindo. Uma boa sessão de relaxamento transforma o dia. Posso ajudar a marcar ou tens alguma dúvida primeiro?" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 🌿 Um momento de relaxamento faz mesmo falta. Gostaria de ver disponibilidade para esta semana?"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! Uma boa sessão de relaxamento transforma o dia. Posso ajudar a marcar ou esclarecer alguma dúvida primeiro?"
+      }
     ]
   },
-
   "greeting_lomi": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 🌊 A Lomi-Lomi é uma técnica incrível — movimentos longos e fluidos que trabalham corpo e mente em simultâneo. Queres saber mais ou marcar já?" },
-      { "id": "B", "text": "Olá, {nome}! A técnica Lomi-Lomi é das mais completas que temos — os clientes adoram. Posso explicar o que esperar ou ajudar a marcar. O que preferes?" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 🌊 A Lomi-Lomi é uma técnica muito envolvente — movimentos longos e fluidos que trabalham corpo e mente em simultâneo. Gostaria de saber mais ou prefere marcar?"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! A técnica Lomi-Lomi é das mais completas que temos. Posso explicar o que esperar ou ajudar a marcar. Como prefere avançar?"
+      }
     ]
   },
-
   "greeting_sueca": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 💆 A massagem sueca é das mais eficazes para relaxamento muscular profundo e activação da circulação. Queres marcar ou tens dúvidas primeiro?" },
-      { "id": "B", "text": "Olá, {nome}! Boa escolha — a técnica sueca é clássica por uma razão. Posso ajudar a encontrar um horário que te convenha. Lisboa ou Cascais?" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 💆 A massagem sueca é muito eficaz para relaxamento muscular profundo e activação da circulação. Gostaria de marcar ou prefere esclarecer alguma dúvida primeiro?"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! Boa escolha — a técnica sueca é clássica por uma razão. Posso ajudar a encontrar um horário conveniente. Lisboa ou Cascais?"
+      }
     ]
   },
-
   "greeting_generic": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome}! 👋 Bem-vindo à Tratamentes. Posso ajudar a marcar uma sessão ou tirar dúvidas sobre os nossos serviços. O que precisas?" },
-      { "id": "B", "text": "Olá, {nome}! 🌿 Bem-vindo. Somos especializados em terapias holísticas e musculoesqueléticas. Como posso ajudar?" }
+      {
+        "id": "A",
+        "text": "Olá, {nome}! 👋 Está a falar com a Tratamentes. Posso ajudar a marcar uma sessão ou esclarecer dúvidas sobre os nossos serviços. Em que posso ajudar?"
+      },
+      {
+        "id": "B",
+        "text": "Olá, {nome}! 🌿 Somos especializados em terapias holísticas e musculoesqueléticas. Como posso ajudar?"
+      }
     ]
   },
-
   "service_info_terapeutica": {
     "variants": [
-      { "id": "A", "text": "A massagem terapêutica trabalha contracturas, tensões crónicas e pontos de dor específicos 💆 Inclui também drenagem linfática quando indicado.\n\nComeça com uma avaliação rápida das tuas queixas, depois trabalho focalizado nas zonas problemáticas. O resultado típico é alívio imediato com efeitos que duram dias.\n\nA primeira sessão é habitualmente de 90min para fazer uma avaliação completa — mas também trabalhamos em 60 ou 30 minutos. Queres marcar?" },
-      { "id": "B", "text": "Na sessão terapêutica avaliamos as tuas queixas e trabalhamos directamente nas zonas com tensão ou dor 🙌\n\nUsamos técnicas manuais profundas, sem óleos, adaptadas ao teu perfil. Muitos clientes saem com alívio imediato.\n\nRecomendo 90min para a primeira sessão, mas adapto-me ao teu tempo disponível. O que preferes?" }
+      {
+        "id": "A",
+        "text": "A massagem terapêutica trabalha contracturas, tensões crónicas e pontos de dor específicos 💆 Inclui também drenagem linfática quando indicado.\n\nComeça com uma breve avaliação das queixas, seguida de trabalho focalizado nas zonas problemáticas. O objectivo é aliviar a tensão, respeitando sempre a sensibilidade de cada pessoa.\n\nA primeira sessão é habitualmente de 90min para uma avaliação mais completa — também há opções de 60 ou 30 minutos. Gostaria de ver horários?"
+      },
+      {
+        "id": "B",
+        "text": "Na sessão terapêutica avaliamos as queixas e trabalhamos directamente as zonas com tensão ou dor 🙌\n\nUsamos técnicas manuais profundas, adaptadas ao perfil e à tolerância de cada cliente. Muitos clientes referem alívio logo após a sessão.\n\nRecomendo 90min para a primeira sessão, mas podemos adaptar ao tempo disponível. Que duração prefere?"
+      }
     ]
   },
-
   "service_info_relaxamento": {
     "variants": [
-      { "id": "A", "text": "A massagem de relaxamento usa movimentos longos e suaves para libertar tensão acumulada e activar a circulação 🌿\n\nÉ ideal para stress, fadiga ou simplesmente para te desligar. A sessão de 60min é a mais popular — mas também temos 30 e 90 minutos. Queres marcar?" },
-      { "id": "B", "text": "É uma massagem corporal completa com óleos essenciais — ritmo suave, envolvente, que leva o sistema nervoso para um estado de calma profunda 🌊\n\nPerfecto para stress ou cansaço acumulado. Normalmente 60min, mas adaptamos. Queres ver disponibilidade?" }
+      {
+        "id": "A",
+        "text": "A massagem de relaxamento usa movimentos longos e suaves para libertar tensão acumulada e activar a circulação 🌿\n\nÉ indicada para stress, fadiga ou para um momento de descanso profundo. A sessão de 60min é a mais popular — também há opções de 30 e 90 minutos. Gostaria de marcar?"
+      },
+      {
+        "id": "B",
+        "text": "É uma massagem corporal completa com óleos essenciais — ritmo suave, envolvente, que ajuda o sistema nervoso a entrar num estado de maior calma 🌊\n\nÉ uma boa escolha para stress ou cansaço acumulado. Normalmente 60min, mas podemos adaptar. Gostaria de ver disponibilidade?"
+      }
     ]
   },
-
   "service_info_lomi": {
     "variants": [
-      { "id": "A", "text": "A Lomi-Lomi é uma técnica havaiana com movimentos longos e fluidos que trabalham o corpo todo em simultâneo 🌺\n\nA sensação é de uma 'onda' contínua — muito diferente de uma massagem convencional. Trabalha tensão física e emocional ao mesmo tempo.\n\nNormalmente 60min. Queres marcar?" }
+      {
+        "id": "A",
+        "text": "A Lomi-Lomi é uma técnica havaiana com movimentos longos e fluidos que trabalham o corpo todo em simultâneo 🌺\n\nA sensação é de uma 'onda' contínua — bastante diferente de uma massagem convencional. Trabalha tensão física e emocional ao mesmo tempo.\n\nNormalmente 60min. Gostaria de marcar?"
+      }
     ]
   },
-
   "service_info_sueca": {
     "variants": [
-      { "id": "A", "text": "A massagem sueca é a base de todas as massagens ocidentais — movimentos de effleurage e petrissage que activam a circulação e soltam a musculatura 💆\n\nÉ firme mas não dolorosa. Boa para tensão muscular geral, má circulação ou recuperação pós-esforço.\n\nNormalmente 60min. Queres marcar?" }
+      {
+        "id": "A",
+        "text": "A massagem sueca é a base de muitas técnicas ocidentais — movimentos de effleurage e petrissage que activam a circulação e libertam a musculatura 💆\n\nÉ firme, mas não deve ser dolorosa. É uma boa opção para tensão muscular geral, má circulação ou recuperação pós-esforço.\n\nNormalmente 60min. Gostaria de marcar?"
+      }
     ]
   },
-
   "service_info_generic": {
     "variants": [
-      { "id": "A", "text": "Na Tratamentes trabalhamos com terapias holísticas e musculoesqueléticas — massagem terapêutica (inclui drenagem linfática), relaxamento, Lomi-Lomi, Sueca, Visceral e Quantum Touch 🌿\n\nCada sessão é adaptada ao que precisas nesse dia. Há algum tratamento específico que queiras saber mais?" }
+      {
+        "id": "A",
+        "text": "Na Tratamentes trabalhamos com terapias holísticas e musculoesqueléticas — massagem terapêutica, relaxamento, Lomi-Lomi, Sueca, Visceral e Quantum Touch 🌿\n\nCada sessão é adaptada ao que a pessoa precisa nesse dia. Há algum tratamento específico sobre o qual gostaria de saber mais?"
+      }
     ]
   },
-
   "ask_duration": {
     "variants": [
-      { "id": "A", "text": "Quanto tempo tens disponível?\n\n{opcoes}" },
-      { "id": "B", "text": "Qual a duração que preferes?\n\n{opcoes}" }
+      {
+        "id": "A",
+        "text": "Que duração seria mais conveniente?\n\n{opcoes}"
+      },
+      {
+        "id": "B",
+        "text": "Qual a duração que prefere?\n\n{opcoes}"
+      }
     ]
   },
-
   "ask_location": {
     "variants": [
-      { "id": "A", "text": "Preferes marcar em Lisboa (Alvalade) ou em Cascais? Também fazemos domicílio na Grande Lisboa." },
-      { "id": "B", "text": "Temos consultório em Lisboa — Alvalade (ter, qui, sex, sáb, dom) — e em Cascais (seg, qua). Ou posso deslocar-me a domicílio. Qual preferes?" }
+      {
+        "id": "A",
+        "text": "Prefere marcar em Lisboa (Alvalade) ou em Cascais? Também fazemos domicílio na Grande Lisboa."
+      },
+      {
+        "id": "B",
+        "text": "Temos consultório em Lisboa — Alvalade (ter, qui, sex, sáb, dom) — e em Cascais (seg, qua). Também é possível deslocação ao domicílio. Qual opção prefere?"
+      }
     ]
   },
-
   "booking_link": {
     "variants": [
-      { "id": "A", "text": "Aqui está o link directo para marcar a tua sessão de {servico}:\n👉 {url}\n\nEscolhes o dia e hora que te convenha. Em menos de 2 minutos está feito." },
-      { "id": "B", "text": "Podes marcar aqui directamente:\n👉 {url}\n\nSe precisares de ajuda a escolher o horário, é só dizer." }
+      {
+        "id": "A",
+        "text": "Aqui está o link directo para marcar a sessão de {servico}:\n👉 {url}\n\nBasta escolher o dia e a hora mais convenientes."
+      },
+      {
+        "id": "B",
+        "text": "Pode marcar directamente aqui:\n👉 {url}\n\nSe precisar de ajuda a escolher o horário, estou aqui para ajudar."
+      }
     ]
   },
-
   "pricing": {
     "variants": [
-      { "id": "A", "text": "💰 {servico}: {preco}.\n\nQueres marcar?" },
-      { "id": "B", "text": "O valor da sessão de {servico} é {preco}.\n\nEstá disponível para esta semana — queres que te ajude a marcar?" }
+      {
+        "id": "A",
+        "text": "💰 {servico}: {preco}.\n\nGostaria de ver horários disponíveis?"
+      },
+      {
+        "id": "B",
+        "text": "O valor da sessão de {servico} é {preco}.\n\nHá disponibilidade para esta semana — pretende ajuda para marcar?"
+      }
     ]
   },
-
   "location_info": {
     "variants": [
-      { "id": "A", "text": "📍 Temos dois espaços:\n\n*Lisboa — Alvalade* (Rua Jorge Colaço 32A)\nTer, Qui, Sex, Sáb, Dom · 10h–22h\n\n*Cascais — Clínica Now* (Av. Eng. Adelino Amaro da Costa 599A)\nSeg e Qua · 10h–19h\n\nTambém fazemos domicílio em toda a Grande Lisboa. Qual preferes?" },
-      { "id": "B", "text": "Estamos em Lisboa (Alvalade) e em Cascais (Clínica Now), e fazemos domicílio na Grande Lisboa e Cascais.\n\nEm qual zona ficas?" }
+      {
+        "id": "A",
+        "text": "📍 Temos dois espaços:\n\n*Lisboa — Alvalade* (Rua Jorge Colaço 32A)\nTer, Qui, Sex, Sáb, Dom · 10h–22h\n\n*Cascais — Clínica Now* (Av. Eng. Adelino Amaro da Costa 599A)\nSeg e Qua · 10h–19h\n\nTambém fazemos domicílio em toda a Grande Lisboa. Qual opção seria mais conveniente?"
+      },
+      {
+        "id": "B",
+        "text": "Estamos em Lisboa (Alvalade) e em Cascais (Clínica Now), e fazemos domicílio na Grande Lisboa e Cascais.\n\nQual é a zona pretendida?"
+      }
     ]
   },
-
   "hours_info": {
     "variants": [
-      { "id": "A", "text": "🕐 Horários:\n\n*Lisboa — Alvalade:* Ter, Qui, Sex, Sáb e Dom — 10h às 22h\n*Cascais — Clínica Now:* Seg e Qua — 10h às 19h\n\nPara ver slots disponíveis em tempo real: https://cal.com/joao-goulart-tratamentes-lisboa-cascais" }
+      {
+        "id": "A",
+        "text": "🕐 Horários:\n\n*Lisboa — Alvalade:* Ter, Qui, Sex, Sáb e Dom — 10h às 22h\n*Cascais — Clínica Now:* Seg e Qua — 10h às 19h\n\nPara ver slots disponíveis em tempo real: https://cal.com/joao-goulart-tratamentes-lisboa-cascais"
+      }
     ]
   },
-
+  "about_tratamentes": {
+    "variants": [
+      {
+        "id": "A",
+        "text": "A Tratamentes é um espaço de terapias holísticas e musculoesqueléticas, com atendimento em Lisboa — Alvalade, Cascais e ao domicílio na Grande Lisboa.\n\nAs sessões são conduzidas por João Goulart e adaptadas ao objectivo de cada pessoa: aliviar dor e tensão, relaxar, recuperar mobilidade ou trabalhar bem-estar. Posso explicar algum tratamento em particular?"
+      },
+      {
+        "id": "B",
+        "text": "Somos a Tratamentes: trabalhamos com massagem terapêutica, relaxamento, Lomi-Lomi, Sueca, Visceral e Quantum Touch, em contexto profissional e com marcação.\n\nAntes de marcar, é natural querer perceber melhor. Gostaria que eu explicasse as diferenças entre os tratamentos?"
+      }
+    ]
+  },
+  "flow_paused": {
+    "variants": [
+      {
+        "id": "A",
+        "text": "Sem problema. Pauso a marcação por agora. Posso esclarecer alguma dúvida sobre a Tratamentes ou sobre os tratamentos?"
+      },
+      {
+        "id": "B",
+        "text": "Claro. Não avanço com marcação. Se preferir, posso primeiro explicar quem somos, como funciona uma sessão ou os valores."
+      }
+    ]
+  },
   "cancel_info": {
     "variants": [
-      { "id": "A", "text": "Para cancelar ou reagendar, usa o link de confirmação que recebeste por email.\n\nSe não encontras o email, diz-me o teu número de telemóvel e encontro a tua reserva." }
+      {
+        "id": "A",
+        "text": "Para cancelar ou reagendar, use o link de confirmação recebido por email.\n\nSe não encontrar o email, indique por favor o número de telemóvel e procuro a reserva."
+      }
     ]
   },
-
   "ask_phone": {
     "variants": [
-      { "id": "A", "text": "Para marcar, preciso do teu número de telemóvel 📱" },
-      { "id": "B", "text": "Qual é o teu número de telemóvel? Assim verifico se já és cliente 😊" }
+      {
+        "id": "A",
+        "text": "Para marcar, preciso do número de telemóvel, por favor 📱"
+      },
+      {
+        "id": "B",
+        "text": "Qual é o número de telemóvel? Assim verifico se já existe registo de cliente 😊"
+      }
     ]
   },
-
+  "ask_self_or_other": {
+    "variants": [
+      {
+        "id": "A",
+        "text": "Antes de avançar: a marcação é para si ou para outra pessoa?"
+      },
+      {
+        "id": "B",
+        "text": "A sessão será para si ou pretende marcar para outra pessoa?"
+      }
+    ]
+  },
+  "ask_name_other": {
+    "variants": [
+      {
+        "id": "A",
+        "text": "Sem problema. Qual é o nome completo da pessoa para quem pretende marcar?"
+      }
+    ]
+  },
   "confirm_contact": {
     "variants": [
-      { "id": "A", "text": "Encontrei o teu registo 👋 Confirmo:\n\n👤 *{nome}*\n📧 {email}\n\nEstá correcto?" },
-      { "id": "B", "text": "Já estás no nosso sistema ✅\n\n👤 *{nome}*\n📧 {email}\n\nConfirmas estes dados?" }
+      {
+        "id": "A",
+        "text": "Encontrei um registo associado a este contacto. A marcação é para si?"
+      },
+      {
+        "id": "B",
+        "text": "Já existe um registo associado a este contacto. A sessão será para si ou para outra pessoa?"
+      }
     ]
   },
-
   "ask_name": {
     "variants": [
-      { "id": "A", "text": "Como te chamas? (nome completo, por favor)" }
+      {
+        "id": "A",
+        "text": "Qual é o nome completo, por favor?"
+      }
     ]
   },
-
   "ask_email": {
     "variants": [
-      { "id": "A", "text": "E o teu email? (podes saltar respondendo «sem email»)" }
+      {
+        "id": "A",
+        "text": "E qual é o email? Se preferir não indicar, pode responder «sem email»."
+      }
     ]
   },
-
   "ask_date": {
     "variants": [
-      { "id": "A", "text": "Que dia preferes? Tenho disponibilidade:\n\n{opcoes}\n\nResponde com o número da opção." },
-      { "id": "B", "text": "Escolhe um dia:\n\n{opcoes}" }
+      {
+        "id": "A",
+        "text": "Que dia prefere? Tenho disponibilidade:\n\n{opcoes}\n\nResponda com o número da opção."
+      },
+      {
+        "id": "B",
+        "text": "Escolha por favor um dia:\n\n{opcoes}"
+      }
     ]
   },
-
   "ask_time": {
     "variants": [
-      { "id": "A", "text": "Que hora preferes em {data}?\n\n{opcoes}\n\nResponde com o número ou a hora directamente." }
+      {
+        "id": "A",
+        "text": "Que hora prefere em {data}?\n\n{opcoes}\n\nResponda com o número ou com a hora directamente."
+      }
     ]
   },
-
   "confirm_booking": {
     "variants": [
-      { "id": "A", "text": "Confirmo a reserva:\n\n👤 *{nome}*\n💆 {servico} — {duracao}min\n📅 {data} às *{hora}*\n📍 {local}\n💰 {preco}\n\nConfirmas?" }
+      {
+        "id": "A",
+        "text": "Confirmo a reserva:\n\n👤 *{nome}*\n💆 {servico} — {duracao}min\n📅 {data} às *{hora}*\n📍 {local}\n💰 {preco}\n\nConfirma, por favor?"
+      }
     ]
   },
-
   "booking_success": {
     "variants": [
-      { "id": "A", "text": "✅ Reserva confirmada!\n\n🔗 Aqui está o teu link — guarda para reagendar ou cancelar se precisares:\n{link}\n\nAté {data}! 🙏" }
+      {
+        "id": "A",
+        "text": "✅ Reserva confirmada!\n\n🔗 Aqui está o link da reserva — guarde para reagendar ou cancelar, se necessário:\n{link}\n\nAté {data}! 🙏"
+      }
     ]
   },
-
   "booking_error": {
     "variants": [
-      { "id": "A", "text": "Ocorreu um erro ao criar a reserva 😔 Podes tentar novamente ou ligar directamente. Peço desculpa pelo inconveniente." }
+      {
+        "id": "A",
+        "text": "Ocorreu um erro ao criar a reserva 😔 Pode tentar novamente ou ligar directamente. Peço desculpa pelo inconveniente."
+      }
     ]
   },
-
   "no_slots": {
     "variants": [
-      { "id": "A", "text": "Não tenho disponibilidade nos próximos dias para essa combinação 😔 Queres tentar outra cidade ou duração?" }
+      {
+        "id": "A",
+        "text": "Não tenho disponibilidade nos próximos dias para essa combinação 😔 Gostaria de tentar outra cidade ou duração?"
+      }
     ]
   },
-
   "invalid_phone": {
     "variants": [
-      { "id": "A", "text": "Não reconheci esse número. Podes escrever no formato 9XXXXXXXX ou +351XXXXXXXXX?" }
+      {
+        "id": "A",
+        "text": "Não reconheci esse número. Pode escrever no formato 9XXXXXXXX ou +351XXXXXXXXX?"
+      }
     ]
   },
-
   "inappropriate": {
     "variants": [
-      { "id": "A", "text": "Só ofereço tratamentos terapêuticos e de bem-estar 🙏 Se quiseres marcar uma sessão, estou aqui para ajudar." },
-      { "id": "B", "text": "Não é esse o caminho por aqui — a Tratamentes é um espaço de terapia e cuidado. Posso ajudar-te com outra coisa?" }
+      {
+        "id": "A",
+        "text": "Só oferecemos tratamentos terapêuticos e de bem-estar 🙏 Se pretender marcar uma sessão, estou aqui para ajudar."
+      },
+      {
+        "id": "B",
+        "text": "A Tratamentes é um espaço de terapia e cuidado. Posso ajudar com alguma questão sobre os tratamentos?"
+      }
     ]
   },
-
   "followup_1": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome} 👋 É oportuno falarmos? Tens alguma dúvida sobre os nossos tratamentos?" },
-      { "id": "B", "text": "Olá {nome}! Ainda por aqui? Posso ajudar a esclarecer alguma coisa ou a encontrar um horário que te convenha." }
+      {
+        "id": "A",
+        "text": "Olá, {nome} 👋 É oportuno falarmos? Ficou alguma dúvida sobre os nossos tratamentos?"
+      },
+      {
+        "id": "B",
+        "text": "Olá {nome}! Posso ajudar a esclarecer alguma coisa ou a encontrar um horário conveniente."
+      }
     ]
   },
-
   "followup_2": {
     "variants": [
-      { "id": "A", "text": "Olá, {nome} 🌿 Compreendo que a agenda possa estar preenchida. Só queria saber se ainda tens interesse e de que forma te posso ajudar com {dordesejo}." },
-      { "id": "B", "text": "Olá {nome}, tudo bem? Ficaste com alguma dúvida sobre {dordesejo}? Estou aqui para ajudar — sem pressas." }
+      {
+        "id": "A",
+        "text": "Olá, {nome} 🌿 Compreendo que a agenda possa estar preenchida. Gostaria apenas de saber se ainda há interesse e de que forma posso ajudar com {dordesejo}."
+      },
+      {
+        "id": "B",
+        "text": "Olá {nome}, tudo bem? Ficou alguma dúvida sobre {dordesejo}? Estou aqui para ajudar — sem pressas."
+      }
     ]
   },
-
   "followup_3": {
     "variants": [
-      { "id": "A", "text": "Olá {nome}! É falta de tempo ou acabaste por perder o interesse? Se puderes dar-me só um sinal para eu saber como avançar, agradeço 😊" },
-      { "id": "B", "text": "Olá {nome}, última mensagem da minha parte 🙏 Se quiseres retomar, é só dizer. A disponibilidade está sempre aqui: https://cal.com/joao-goulart-tratamentes-lisboa-cascais" }
+      {
+        "id": "A",
+        "text": "Olá {nome}! Só para perceber se faz sentido manter o contacto: prefere que eu volte a falar mais tarde ou já não há interesse? Agradeço a indicação 😊"
+      },
+      {
+        "id": "B",
+        "text": "Olá {nome}, última mensagem da minha parte 🙏 Se quiser retomar, basta dizer. A disponibilidade está sempre aqui: https://cal.com/joao-goulart-tratamentes-lisboa-cascais"
+      }
+    ]
+  },
+  "farewell": {
+    "variants": [
+      {
+        "id": "A",
+        "text": "Grato pelo contacto! Fico à disposição para quando precisar. 🙏"
+      },
+      {
+        "id": "B",
+        "text": "Obrigado! Quando quiser marcar ou tirar dúvidas, estou por aqui. 😊"
+      },
+      {
+        "id": "C",
+        "text": "Sem problema! Fica à vontade para voltar quando precisar. Até breve! 🌿"
+      }
     ]
   }
 }
